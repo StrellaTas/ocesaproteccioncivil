@@ -8,8 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PapaParse para procesamiento eficiente de archivos CSV -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- SheetJS para lectura y exportación nativa de archivos XLSX/XLS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
 
@@ -30,8 +30,8 @@
                 <button onclick="switchTab('nuevo')" id="btn-nuevo" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
                     <i class="fa-solid fa-circle-plus mr-1.5"></i> Capturar Evento
                 </button>
-                <button onclick="switchTab('csv')" id="btn-csv" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
-                    <i class="fa-solid fa-file-csv mr-1.5"></i> Cargar CSV
+                <button onclick="switchTab('excel')" id="btn-excel" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
+                    <i class="fa-solid fa-file-excel mr-1.5"></i> Cargar Excel
                 </button>
             </nav>
         </div>
@@ -44,13 +44,16 @@
         <section id="view-dashboard" class="space-y-6">
             <div class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm gap-4">
                 <h2 class="text-lg font-bold text-slate-700"><i class="fa-solid fa-filter text-amber-600 mr-2"></i> Filtros de Período</h2>
-                <div class="flex flex-wrap gap-3">
+                <div class="flex flex-wrap items-center gap-3">
                     <select id="filtro-periodo" onchange="actualizarReportes()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
                         <option value="todos">Todos los Periodos</option>
                         <option value="mensual">Mensual (Mes Actual)</option>
                         <option value="trimestral">Trimestral (Q actual)</option>
                         <option value="anual" selected>Anual (2026)</option>
                     </select>
+                    <button onclick="exportarReporteExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition cursor-pointer flex items-center">
+                        <i class="fa-solid fa-file-excel mr-2"></i> Exportar Reporte a Excel
+                    </button>
                 </div>
             </div>
 
@@ -86,7 +89,12 @@
         <section id="view-tabla" class="hidden space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm gap-3">
                 <h2 class="text-lg font-bold text-slate-700"><i class="fa-solid fa-database text-amber-600 mr-2"></i> Base de Datos en Tiempo Real</h2>
-                <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar evento o inmueble..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar evento o inmueble..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64">
+                    <button onclick="exportarTablaExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow transition cursor-pointer flex items-center whitespace-nowrap">
+                        <i class="fa-solid fa-download mr-1.5"></i> Exportar XLSX
+                    </button>
+                </div>
             </div>
             <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
                 <table id="tabla-eventos" class="w-full text-left border-collapse text-xs">
@@ -190,29 +198,29 @@
             </form>
         </section>
 
-        <!-- 4. SECCIÓN CARGA MASIVA DE CSV -->
-        <section id="view-csv" class="hidden max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm">
+        <!-- 4. SECCIÓN CARGA MASIVA DE EXCEL (XLSX) -->
+        <section id="view-excel" class="hidden max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm">
             <h2 class="text-xl font-bold text-slate-800 mb-4 border-b pb-3">
-                <i class="fa-solid fa-file-csv text-amber-600 mr-2"></i> Carga Masiva de Históricos desde CSV
+                <i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i> Carga Masiva desde Excel (.xlsx / .xls / .csv)
             </h2>
             <p class="text-xs text-slate-600 mb-6 leading-relaxed">
-                Guarda tu machote de Excel como <b>CSV (delimitado por comas)</b>. El sistema procesará las columnas mapeándolas con las de tu machote (<code>EVENTO</code>, <code>FECHA</code>, <code>INMUEBLE</code>, <code>AFORO</code>, etc.) y subirá todos los eventos pasados directamente a Firebase.
+                Selecciona tu archivo de machote directamente en formato <b>Excel (.xlsx o .xls)</b> o CSV. El sistema identificará las columnas (<code>EVENTO</code>, <code>FECHA</code>, <code>INMUEBLE</code>, <code>AFORO</code>, etc.) y guardará los datos históricos en Firebase Realtime Database.
             </p>
 
             <div class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
-                <i class="fa-solid fa-cloud-arrow-up text-4xl text-amber-600 mb-3"></i>
-                <label for="input-csv" class="block font-bold text-slate-700 mb-1 cursor-pointer">Seleccionar Archivo CSV</label>
-                <span class="text-xs text-slate-400">Archivos .csv soportados</span>
-                <input type="file" id="input-csv" accept=".csv" class="hidden" onchange="procesarCSV(event)">
+                <i class="fa-solid fa-file-excel text-4xl text-emerald-600 mb-3"></i>
+                <label for="input-excel" class="block font-bold text-slate-700 mb-1 cursor-pointer">Seleccionar Archivo Excel</label>
+                <span class="text-xs text-slate-400">Formatos .xlsx, .xls y .csv soportados</span>
+                <input type="file" id="input-excel" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarExcel(event)">
             </div>
 
-            <div id="progreso-csv" class="mt-6 hidden">
+            <div id="progreso-excel" class="mt-6 hidden">
                 <div class="flex justify-between text-xs font-bold text-slate-600 mb-1">
                     <span>Estado del procesamiento:</span>
-                    <span id="csv-status">Procesando...</span>
+                    <span id="excel-status">Procesando...</span>
                 </div>
                 <div class="w-full bg-slate-200 rounded-full h-2.5">
-                    <div id="csv-bar" class="bg-amber-600 h-2.5 rounded-full" style="width: 0%"></div>
+                    <div id="excel-bar" class="bg-emerald-600 h-2.5 rounded-full" style="width: 0%"></div>
                 </div>
             </div>
         </section>
@@ -239,6 +247,7 @@
         const db = getDatabase(app);
 
         let eventosGlobal = [];
+        let eventosFiltradosActuales = [];
 
         // Leer datos en tiempo real desde Firebase
         const eventosRef = ref(db, 'eventos');
@@ -290,78 +299,113 @@
             });
         };
 
-        // Procesar Carga Masiva CSV
-        window.procesarCSV = function(e) {
+        // Carga Masiva desde Excel (.xlsx / .xls / .csv)
+        window.procesarExcel = function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            document.getElementById('progreso-csv').classList.remove('hidden');
-            document.getElementById('csv-status').innerText = 'Leyendo archivo...';
+            document.getElementById('progreso-excel').classList.remove('hidden');
+            document.getElementById('excel-status').innerText = 'Leyendo hoja de Excel...';
 
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: async function(results) {
-                    const rows = results.data;
-                    let cargados = 0;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheet];
+                
+                // Convertir a JSON
+                const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                let cargados = 0;
+
+                for (let i = 0; i < rows.length; i++) {
+                    const r = rows[i];
                     
-                    for (let i = 0; i < rows.length; i++) {
-                        const r = rows[i];
-                        
-                        // Normalización de nombres de columnas buscando coincidencias flexibles
-                        const getVal = (colNames) => {
-                            for (let name of colNames) {
-                                const key = Object.keys(r).find(k => k.trim().toUpperCase() === name.toUpperCase());
-                                if (key && r[key]) return r[key].toString().trim();
-                            }
-                            return '';
-                        };
+                    const getVal = (colNames) => {
+                        for (let name of colNames) {
+                            const key = Object.keys(r).find(k => k.trim().toUpperCase() === name.toUpperCase());
+                            if (key && r[key] !== undefined && r[key] !== "") return r[key].toString().trim();
+                        }
+                        return '';
+                    };
 
-                        const nomEvento = getVal(['EVENTO', 'EVENTO ']);
-                        if (!nomEvento) continue; // Salta filas sin nombre de evento
+                    const nomEvento = getVal(['EVENTO', 'EVENTO ']);
+                    if (!nomEvento || nomEvento.toUpperCase() === 'EVENTO') continue;
 
-                        const rawFecha = getVal(['FECHA']);
-                        let fechaNorm = rawFecha;
-                        let dateObj = new Date(rawFecha);
-                        if (isNaN(dateObj.getTime())) dateObj = new Date('2026-10-15');
+                    const rawFecha = getVal(['FECHA']);
+                    let dateObj = new Date(rawFecha);
+                    if (isNaN(dateObj.getTime())) dateObj = new Date('2026-10-15');
 
-                        const regObj = {
-                            evento: nomEvento,
-                            fecha: fechaNorm || '2026-10-15',
-                            anio: dateObj.getFullYear() || 2026,
-                            mes: dateObj.getMonth() + 1 || 10,
-                            trimestre: Math.floor((dateObj.getMonth() || 9) / 3) + 1,
-                            inmueble: getVal(['INMUEBLE', 'INMUEBLE ']),
-                            aforo: getVal(['AFORO', 'AFORO ']),
-                            horario: getVal(['HORARIO EVENTO', 'HORARIO']),
-                            dro: getVal(['DRO']),
-                            sacm: getVal(['CARTA SACM', 'SACM']) || 'NO',
-                            aviso: getVal(['AVISO']) || 'NO',
-                            ssc: getVal(['SSC RESOLUCIÓN', 'SSC']) || 'NO',
-                            pepc: getVal(['REGISTRO PEPC', 'PEPC']) || 'NO',
-                            pagoSsc: getVal(['PAGO SSC']) || 'NO',
-                            bomberos: getVal(['HORARIOS BOMBEROS', 'BOMBEROS']),
-                            amenidades: `PYRO: ${getVal(['PYRO']) || 'NO'} | DRON: ${getVal(['DRON']) || 'NO'} | ACTIVACIONES: ${getVal(['ACTIVACIONES']) || 'NINGUNA'}`,
-                            timestamp: Date.now()
-                        };
+                    const regObj = {
+                        evento: nomEvento,
+                        fecha: rawFecha || '2026-10-15',
+                        anio: dateObj.getFullYear() || 2026,
+                        mes: dateObj.getMonth() + 1 || 10,
+                        trimestre: Math.floor((dateObj.getMonth() || 9) / 3) + 1,
+                        inmueble: getVal(['INMUEBLE', 'INMUEBLE ']),
+                        aforo: getVal(['AFORO', 'AFORO ']),
+                        horario: getVal(['HORARIO EVENTO', 'HORARIO']),
+                        dro: getVal(['DRO']),
+                        sacm: getVal(['CARTA SACM', 'SACM']) || 'NO',
+                        aviso: getVal(['AVISO']) || 'NO',
+                        ssc: getVal(['SSC RESOLUCIÓN', 'SSC']) || 'NO',
+                        pepc: getVal(['REGISTRO PEPC', 'PEPC']) || 'NO',
+                        pagoSsc: getVal(['PAGO SSC']) || 'NO',
+                        bomberos: getVal(['HORARIOS BOMBEROS', 'BOMBEROS']),
+                        amenidades: `PYRO: ${getVal(['PYRO']) || 'NO'} | DRON: ${getVal(['DRON']) || 'NO'} | ACTIVACIONES: ${getVal(['ACTIVACIONES']) || 'NINGUNA'}`,
+                        timestamp: Date.now()
+                    };
 
-                        const newRef = push(eventosRef);
-                        await set(newRef, regObj);
-                        
-                        cargados++;
-                        let pct = Math.round((cargados / rows.length) * 100);
-                        document.getElementById('csv-bar').style.width = pct + '%';
-                        document.getElementById('csv-status').innerText = `Cargados ${cargados} de ${rows.length}`;
-                    }
-
-                    setTimeout(() => {
-                        alert(`¡Proceso terminado! Se cargaron ${cargados} eventos históricos a Firebase.`);
-                        document.getElementById('progreso-csv').classList.add('hidden');
-                        document.getElementById('input-csv').value = '';
-                        switchTab('tabla');
-                    }, 500);
+                    const newRef = push(eventosRef);
+                    await set(newRef, regObj);
+                    
+                    cargados++;
+                    let pct = Math.round((cargados / rows.length) * 100);
+                    document.getElementById('excel-bar').style.width = pct + '%';
+                    document.getElementById('excel-status').innerText = `Procesados ${cargados} registros`;
                 }
-            });
+
+                setTimeout(() => {
+                    alert(`¡Éxito! Se cargaron ${cargados} eventos históricos a la base de datos.`);
+                    document.getElementById('progreso-excel').classList.add('hidden');
+                    document.getElementById('input-excel').value = '';
+                    switchTab('tabla');
+                }, 500);
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        // Exportar Reportes Resumidos a Excel
+        window.exportarReporteExcel = function() {
+            if (eventosFiltradosActuales.length === 0) {
+                alert("No hay registros en el periodo seleccionado para exportar.");
+                return;
+            }
+
+            const dataExport = eventosFiltradosActuales.map(i => ({
+                "EVENTO": i.evento,
+                "FECHA": i.fecha,
+                "INMUEBLE": i.inmueble,
+                "AFORO": i.aforo,
+                "HORARIO": i.horario,
+                "DRO": i.dro || 'N/A',
+                "CARTA SACM": i.sacm,
+                "REGISTRO PEPC": i.pepc,
+                "PAGO SSC": i.pagoSsc,
+                "AMENIDADES / NOTAS": i.amenidades
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Reporte PC");
+
+            const filtro = document.getElementById('filtro-periodo').value;
+            XLSX.writeFile(wb, `Reporte_Proteccion_Civil_${filtro}_2026.xlsx`);
+        };
+
+        // Exportar Tabla General a Excel
+        window.exportarTablaExcel = function() {
+            window.exportarReporteExcel();
         };
 
         // Eliminar registro
@@ -409,30 +453,30 @@
             const trimestreActual = Math.floor(ahora.getMonth() / 3) + 1;
             const anioActual = ahora.getFullYear();
 
-            let filtrados = eventosGlobal.filter(item => {
+            eventosFiltradosActuales = eventosGlobal.filter(item => {
                 if (filtro === 'mensual') return item.mes === mesActual && item.anio === anioActual;
                 if (filtro === 'trimestral') return item.trimestre === trimestreActual && item.anio === anioActual;
                 if (filtro === 'anual') return item.anio === anioActual;
                 return true;
             });
 
-            document.getElementById('kpi-total-eventos').innerText = filtrados.length;
+            document.getElementById('kpi-total-eventos').innerText = eventosFiltradosActuales.length;
             
-            let totalAsistentes = filtrados.reduce((acc, curr) => {
+            let totalAsistentes = eventosFiltradosActuales.reduce((acc, curr) => {
                 let num = parseInt((curr.aforo || '').toString().replace(/[^0-9]/g, '')) || 0;
                 return acc + num;
             }, 0);
             document.getElementById('kpi-aforo').innerText = totalAsistentes.toLocaleString() + " asis.";
 
-            let pepcSis = filtrados.filter(i => i.pepc === 'SI').length;
-            let porcentajePepc = filtrados.length > 0 ? Math.round((pepcSis / filtrados.length) * 100) : 0;
+            let pepcSis = eventosFiltradosActuales.filter(i => i.pepc === 'SI').length;
+            let porcentajePepc = eventosFiltradosActuales.length > 0 ? Math.round((pepcSis / eventosFiltradosActuales.length) * 100) : 0;
             document.getElementById('kpi-pepc').innerText = porcentajePepc + "%";
 
-            let pyroCount = filtrados.filter(i => i.amenidades && i.amenidades.toLowerCase().includes('pyro: si')).length;
+            let pyroCount = eventosFiltradosActuales.filter(i => i.amenidades && i.amenidades.toLowerCase().includes('pyro: si')).length;
             document.getElementById('kpi-pyro').innerText = pyroCount;
 
             document.getElementById('resumen-ejecutivo').innerHTML = `
-                <p>📊 En el periodo seleccionado se registran <b>${filtrados.length} eventos</b> operados.</p>
+                <p>📊 En el periodo seleccionado (<b>${filtro.toUpperCase()}</b>) se registran <b>${eventosFiltradosActuales.length} eventos</b> operados.</p>
                 <p>🛡️ El <b>${porcentajePepc}%</b> cuenta con Programa Especial de Protección Civil (PEPC) liberado y aprobado.</p>
                 <p>⚡ Se han supervisado escenarios con afluencia total estimada de <b>${totalAsistentes.toLocaleString()} personas</b> bajo los horarios establecidos.</p>
             `;
@@ -450,7 +494,7 @@
 
         // Navegación por pestañas
         window.switchTab = function(tab) {
-            ['dashboard', 'tabla', 'nuevo', 'csv'].forEach(t => {
+            ['dashboard', 'tabla', 'nuevo', 'excel'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 document.getElementById('btn-' + t).classList.remove('bg-amber-600');
                 document.getElementById('btn-' + t).classList.add('bg-slate-800');
