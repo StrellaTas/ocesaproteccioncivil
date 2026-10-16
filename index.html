@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Protección Civil - Monitoreo y Reportes en Tiempo Real</title>
-    <!-- Tailwind CSS para un diseño moderno y responsivo -->
+    <!-- Tailwind CSS para diseño moderno -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PapaParse para procesamiento eficiente de archivos CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
 
@@ -18,15 +20,18 @@
                 <i class="fa-solid fa-shield-halved text-amber-500 text-2xl"></i>
                 <h1 class="text-xl font-bold tracking-wide">Protección Civil | OCESA</h1>
             </div>
-            <nav class="flex space-x-4 mt-3 md:mt-0">
-                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-4 py-2 bg-amber-600 rounded-lg text-sm font-semibold transition cursor-pointer">
-                    <i class="fa-solid fa-chart-pie mr-2"></i> Reportes y Métricas
+            <nav class="flex flex-wrap justify-center gap-2 mt-3 md:mt-0">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3.5 py-2 bg-amber-600 rounded-lg text-sm font-semibold transition cursor-pointer">
+                    <i class="fa-solid fa-chart-pie mr-1.5"></i> Reportes
                 </button>
-                <button onclick="switchTab('tabla')" id="btn-tabla" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
-                    <i class="fa-solid fa-table mr-2"></i> Tabla General
+                <button onclick="switchTab('tabla')" id="btn-tabla" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
+                    <i class="fa-solid fa-table mr-1.5"></i> Tabla General
                 </button>
-                <button onclick="switchTab('nuevo')" id="btn-nuevo" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
-                    <i class="fa-solid fa-circle-plus mr-2"></i> Nuevo Registro
+                <button onclick="switchTab('nuevo')" id="btn-nuevo" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
+                    <i class="fa-solid fa-circle-plus mr-1.5"></i> Capturar Evento
+                </button>
+                <button onclick="switchTab('csv')" id="btn-csv" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
+                    <i class="fa-solid fa-file-csv mr-1.5"></i> Cargar CSV
                 </button>
             </nav>
         </div>
@@ -79,9 +84,9 @@
 
         <!-- 2. SECCIÓN TABLA GENERAL EN TIEMPO REAL -->
         <section id="view-tabla" class="hidden space-y-4">
-            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm gap-3">
                 <h2 class="text-lg font-bold text-slate-700"><i class="fa-solid fa-database text-amber-600 mr-2"></i> Base de Datos en Tiempo Real</h2>
-                <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar evento o inmueble..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 w-64">
+                <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar evento o inmueble..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64">
             </div>
             <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
                 <table id="tabla-eventos" class="w-full text-left border-collapse text-xs">
@@ -96,7 +101,7 @@
                             <th class="p-3">SACM</th>
                             <th class="p-3">PEPC</th>
                             <th class="p-3">Pago SSC</th>
-                            <th class="p-3">Pyro / Dron</th>
+                            <th class="p-3">Amenidades</th>
                             <th class="p-3 text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -124,7 +129,7 @@
 
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Inmueble</label>
-                    <input type="text" id="inp-inmueble" placeholder="ej. Estadio GNP Seguros" required class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                    <input type="text" id="inp-inmueble" placeholder="ej. ESTADIO GNP SEGUROS" required class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
 
                 <div>
@@ -167,7 +172,6 @@
                     <select id="inp-pagossc" class="w-full border border-slate-300 rounded-lg p-2.5 bg-white"><option value="SI">SI</option><option value="NO">NO</option><option value="EN PROCESO">EN PROCESO</option></select>
                 </div>
 
-                <!-- Bomberos y Unidades -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Horario Bomberos / Unidades</label>
                     <input type="text" id="inp-bomberos" placeholder="16:00 hrs (# Unidades: 1)" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
@@ -175,7 +179,7 @@
 
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Amenidades (Pyro / Dron / Alimentos)</label>
-                    <input type="text" id="inp-amenidades" placeholder="Pyro: NO | Dron: NO | Food Truck: SI" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                    <input type="text" id="inp-amenidades" placeholder="PYRO: SI | DRON: NO" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
 
                 <div class="md:col-span-2 pt-4">
@@ -184,6 +188,33 @@
                     </button>
                 </div>
             </form>
+        </section>
+
+        <!-- 4. SECCIÓN CARGA MASIVA DE CSV -->
+        <section id="view-csv" class="hidden max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm">
+            <h2 class="text-xl font-bold text-slate-800 mb-4 border-b pb-3">
+                <i class="fa-solid fa-file-csv text-amber-600 mr-2"></i> Carga Masiva de Históricos desde CSV
+            </h2>
+            <p class="text-xs text-slate-600 mb-6 leading-relaxed">
+                Guarda tu machote de Excel como <b>CSV (delimitado por comas)</b>. El sistema procesará las columnas mapeándolas con las de tu machote (<code>EVENTO</code>, <code>FECHA</code>, <code>INMUEBLE</code>, <code>AFORO</code>, etc.) y subirá todos los eventos pasados directamente a Firebase.
+            </p>
+
+            <div class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
+                <i class="fa-solid fa-cloud-arrow-up text-4xl text-amber-600 mb-3"></i>
+                <label for="input-csv" class="block font-bold text-slate-700 mb-1 cursor-pointer">Seleccionar Archivo CSV</label>
+                <span class="text-xs text-slate-400">Archivos .csv soportados</span>
+                <input type="file" id="input-csv" accept=".csv" class="hidden" onchange="procesarCSV(event)">
+            </div>
+
+            <div id="progreso-csv" class="mt-6 hidden">
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-1">
+                    <span>Estado del procesamiento:</span>
+                    <span id="csv-status">Procesando...</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2.5">
+                    <div id="csv-bar" class="bg-amber-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
         </section>
 
     </main>
@@ -223,7 +254,7 @@
             actualizarReportes();
         });
 
-        // Guardar nuevo evento
+        // Guardar evento individual
         window.guardarEvento = function(e) {
             e.preventDefault();
             const fechaVal = document.getElementById('inp-fecha').value;
@@ -232,9 +263,9 @@
             const nuevoReg = {
                 evento: document.getElementById('inp-evento').value,
                 fecha: fechaVal,
-                anio: fechaObj.getFullYear(),
-                mes: fechaObj.getMonth() + 1,
-                trimestre: Math.floor(fechaObj.getMonth() / 3) + 1,
+                anio: fechaObj.getFullYear() || 2026,
+                mes: fechaObj.getMonth() + 1 || 10,
+                trimestre: Math.floor((fechaObj.getMonth() || 9) / 3) + 1,
                 inmueble: document.getElementById('inp-inmueble').value,
                 aforo: document.getElementById('inp-aforo').value,
                 horario: document.getElementById('inp-horario').value,
@@ -256,6 +287,80 @@
                 switchTab('tabla');
             }).catch(err => {
                 alert("Error al guardar: " + err.message);
+            });
+        };
+
+        // Procesar Carga Masiva CSV
+        window.procesarCSV = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('progreso-csv').classList.remove('hidden');
+            document.getElementById('csv-status').innerText = 'Leyendo archivo...';
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    const rows = results.data;
+                    let cargados = 0;
+                    
+                    for (let i = 0; i < rows.length; i++) {
+                        const r = rows[i];
+                        
+                        // Normalización de nombres de columnas buscando coincidencias flexibles
+                        const getVal = (colNames) => {
+                            for (let name of colNames) {
+                                const key = Object.keys(r).find(k => k.trim().toUpperCase() === name.toUpperCase());
+                                if (key && r[key]) return r[key].toString().trim();
+                            }
+                            return '';
+                        };
+
+                        const nomEvento = getVal(['EVENTO', 'EVENTO ']);
+                        if (!nomEvento) continue; // Salta filas sin nombre de evento
+
+                        const rawFecha = getVal(['FECHA']);
+                        let fechaNorm = rawFecha;
+                        let dateObj = new Date(rawFecha);
+                        if (isNaN(dateObj.getTime())) dateObj = new Date('2026-10-15');
+
+                        const regObj = {
+                            evento: nomEvento,
+                            fecha: fechaNorm || '2026-10-15',
+                            anio: dateObj.getFullYear() || 2026,
+                            mes: dateObj.getMonth() + 1 || 10,
+                            trimestre: Math.floor((dateObj.getMonth() || 9) / 3) + 1,
+                            inmueble: getVal(['INMUEBLE', 'INMUEBLE ']),
+                            aforo: getVal(['AFORO', 'AFORO ']),
+                            horario: getVal(['HORARIO EVENTO', 'HORARIO']),
+                            dro: getVal(['DRO']),
+                            sacm: getVal(['CARTA SACM', 'SACM']) || 'NO',
+                            aviso: getVal(['AVISO']) || 'NO',
+                            ssc: getVal(['SSC RESOLUCIÓN', 'SSC']) || 'NO',
+                            pepc: getVal(['REGISTRO PEPC', 'PEPC']) || 'NO',
+                            pagoSsc: getVal(['PAGO SSC']) || 'NO',
+                            bomberos: getVal(['HORARIOS BOMBEROS', 'BOMBEROS']),
+                            amenidades: `PYRO: ${getVal(['PYRO']) || 'NO'} | DRON: ${getVal(['DRON']) || 'NO'} | ACTIVACIONES: ${getVal(['ACTIVACIONES']) || 'NINGUNA'}`,
+                            timestamp: Date.now()
+                        };
+
+                        const newRef = push(eventosRef);
+                        await set(newRef, regObj);
+                        
+                        cargados++;
+                        let pct = Math.round((cargados / rows.length) * 100);
+                        document.getElementById('csv-bar').style.width = pct + '%';
+                        document.getElementById('csv-status').innerText = `Cargados ${cargados} de ${rows.length}`;
+                    }
+
+                    setTimeout(() => {
+                        alert(`¡Proceso terminado! Se cargaron ${cargados} eventos históricos a Firebase.`);
+                        document.getElementById('progreso-csv').classList.add('hidden');
+                        document.getElementById('input-csv').value = '';
+                        switchTab('tabla');
+                    }, 500);
+                }
             });
         };
 
@@ -313,9 +418,8 @@
 
             document.getElementById('kpi-total-eventos').innerText = filtrados.length;
             
-            // Calcular aforo sumando números aproximados
             let totalAsistentes = filtrados.reduce((acc, curr) => {
-                let num = parseInt(curr.aforo.replace(/[^0-9]/g, '')) || 0;
+                let num = parseInt((curr.aforo || '').toString().replace(/[^0-9]/g, '')) || 0;
                 return acc + num;
             }, 0);
             document.getElementById('kpi-aforo').innerText = totalAsistentes.toLocaleString() + " asis.";
@@ -324,10 +428,9 @@
             let porcentajePepc = filtrados.length > 0 ? Math.round((pepcSis / filtrados.length) * 100) : 0;
             document.getElementById('kpi-pepc').innerText = porcentajePepc + "%";
 
-            let pyroCount = filtrados.filter(i => i.amenidades && i.amenidades.toLowerCase().includes('pyro')).length;
+            let pyroCount = filtrados.filter(i => i.amenidades && i.amenidades.toLowerCase().includes('pyro: si')).length;
             document.getElementById('kpi-pyro').innerText = pyroCount;
 
-            // Resumen ejecutivo
             document.getElementById('resumen-ejecutivo').innerHTML = `
                 <p>📊 En el periodo seleccionado se registran <b>${filtrados.length} eventos</b> operados.</p>
                 <p>🛡️ El <b>${porcentajePepc}%</b> cuenta con Programa Especial de Protección Civil (PEPC) liberado y aprobado.</p>
@@ -339,14 +442,15 @@
         window.filtrarTabla = function() {
             const query = document.getElementById('buscador').value.toLowerCase();
             const filtrados = eventosGlobal.filter(i => 
-                i.evento.toLowerCase().includes(query) || i.inmueble.toLowerCase().includes(query)
+                (i.evento && i.evento.toLowerCase().includes(query)) || 
+                (i.inmueble && i.inmueble.toLowerCase().includes(query))
             );
             renderTabla(filtrados);
         };
 
         // Navegación por pestañas
         window.switchTab = function(tab) {
-            ['dashboard', 'tabla', 'nuevo'].forEach(t => {
+            ['dashboard', 'tabla', 'nuevo', 'csv'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 document.getElementById('btn-' + t).classList.remove('bg-amber-600');
                 document.getElementById('btn-' + t).classList.add('bg-slate-800');
