@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protección Civil - Monitoreo y Reportes en Tiempo Real</title>
+    <!-- Tailwind CSS para un diseño moderno y responsivo -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-shield-halved text-amber-500 text-2xl"></i>
+                <h1 class="text-xl font-bold tracking-wide">Protección Civil | OCESA</h1>
+            </div>
+            <nav class="flex space-x-4 mt-3 md:mt-0">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-4 py-2 bg-amber-600 rounded-lg text-sm font-semibold transition cursor-pointer">
+                    <i class="fa-solid fa-chart-pie mr-2"></i> Reportes y Métricas
+                </button>
+                <button onclick="switchTab('tabla')" id="btn-tabla" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
+                    <i class="fa-solid fa-table mr-2"></i> Tabla General
+                </button>
+                <button onclick="switchTab('nuevo')" id="btn-nuevo" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
+                    <i class="fa-solid fa-circle-plus mr-2"></i> Nuevo Registro
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+
+        <!-- 1. SECCIÓN DE REPORTES Y MÉTRICAS -->
+        <section id="view-dashboard" class="space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm gap-4">
+                <h2 class="text-lg font-bold text-slate-700"><i class="fa-solid fa-filter text-amber-600 mr-2"></i> Filtros de Período</h2>
+                <div class="flex flex-wrap gap-3">
+                    <select id="filtro-periodo" onchange="actualizarReportes()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                        <option value="todos">Todos los Periodos</option>
+                        <option value="mensual">Mensual (Mes Actual)</option>
+                        <option value="trimestral">Trimestral (Q actual)</option>
+                        <option value="anual" selected>Anual (2026)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tarjetas KPI -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-amber-500">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total de Eventos</p>
+                    <h3 id="kpi-total-eventos" class="text-2xl font-black text-slate-800 mt-1">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Aforo Acumulado</p>
+                    <h3 id="kpi-aforo" class="text-2xl font-black text-slate-800 mt-1">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-emerald-500">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Con Permiso PEPC</p>
+                    <h3 id="kpi-pepc" class="text-2xl font-black text-slate-800 mt-1">0%</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-purple-500">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Eventos con Pirotecnia</p>
+                    <h3 id="kpi-pyro" class="text-2xl font-black text-slate-800 mt-1">0</h3>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-md font-bold text-slate-700 mb-4">Resumen Ejecutivo del Periodo Seleccionado</h3>
+                <div id="resumen-ejecutivo" class="text-sm text-slate-600 space-y-2">
+                    Cargando datos desde Firebase...
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. SECCIÓN TABLA GENERAL EN TIEMPO REAL -->
+        <section id="view-tabla" class="hidden space-y-4">
+            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+                <h2 class="text-lg font-bold text-slate-700"><i class="fa-solid fa-database text-amber-600 mr-2"></i> Base de Datos en Tiempo Real</h2>
+                <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar evento o inmueble..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 w-64">
+            </div>
+            <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+                <table id="tabla-eventos" class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-800 text-white uppercase tracking-wider">
+                            <th class="p-3">Evento</th>
+                            <th class="p-3">Fecha</th>
+                            <th class="p-3">Inmueble</th>
+                            <th class="p-3">Aforo</th>
+                            <th class="p-3">Horario</th>
+                            <th class="p-3">DRO</th>
+                            <th class="p-3">SACM</th>
+                            <th class="p-3">PEPC</th>
+                            <th class="p-3">Pago SSC</th>
+                            <th class="p-3">Pyro / Dron</th>
+                            <th class="p-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200" id="tabla-cuerpo">
+                        <!-- Datos cargados dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. SECCIÓN NUEVO REGISTRO (CAMPO) -->
+        <section id="view-nuevo" class="hidden max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm">
+            <h2 class="text-xl font-bold text-slate-800 mb-6 border-b pb-3"><i class="fa-solid fa-file-pen text-amber-600 mr-2"></i> Captura de Evento - Protección Civil</h2>
+            <form id="form-evento" onsubmit="guardarEvento(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                
+                <div class="md:col-span-2">
+                    <label class="block font-semibold text-slate-700 mb-1">Nombre del Evento</label>
+                    <input type="text" id="inp-evento" required class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Fecha</label>
+                    <input type="date" id="inp-fecha" required class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Inmueble</label>
+                    <input type="text" id="inp-inmueble" placeholder="ej. Estadio GNP Seguros" required class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Aforo Estimado</label>
+                    <input type="text" id="inp-aforo" placeholder="ej. 70,000 asistentes" required class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Horario del Evento</label>
+                    <input type="text" id="inp-horario" placeholder="21:00 hrs – 02:00 hrs" required class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <!-- Permisos -->
+                <div class="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <div>
+                        <label class="block font-bold text-xs text-slate-600 mb-1">CARTA SACM</label>
+                        <select id="inp-sacm" class="w-full border border-slate-300 rounded p-1.5 bg-white"><option value="SI">SI</option><option value="NO">NO</option><option value="EN PROCESO">EN PROCESO</option></select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-xs text-slate-600 mb-1">AVISO</label>
+                        <select id="inp-aviso" class="w-full border border-slate-300 rounded p-1.5 bg-white"><option value="SI">SI</option><option value="NO">NO</option><option value="EN PROCESO">EN PROCESO</option></select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-xs text-slate-600 mb-1">SSC RESOLUCIÓN</label>
+                        <select id="inp-ssc" class="w-full border border-slate-300 rounded p-1.5 bg-white"><option value="SI">SI</option><option value="NO">NO</option><option value="EN PROCESO">EN PROCESO</option></select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-xs text-slate-600 mb-1">REGISTRO PEPC</label>
+                        <select id="inp-pepc" class="w-full border border-slate-300 rounded p-1.5 bg-white"><option value="SI">SI</option><option value="NO">NO</option><option value="EN PROCESO">EN PROCESO</option></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">DRO (Nombre)</label>
+                    <input type="text" id="inp-dro" placeholder="Nombre del DRO" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Pago SSC</label>
+                    <select id="inp-pagossc" class="w-full border border-slate-300 rounded-lg p-2.5 bg-white"><option value="SI">SI</option><option value="NO">NO</option><option value="EN PROCESO">EN PROCESO</option></select>
+                </div>
+
+                <!-- Bomberos y Unidades -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Horario Bomberos / Unidades</label>
+                    <input type="text" id="inp-bomberos" placeholder="16:00 hrs (# Unidades: 1)" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Amenidades (Pyro / Dron / Alimentos)</label>
+                    <input type="text" id="inp-amenidades" placeholder="Pyro: NO | Dron: NO | Food Truck: SI" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div class="md:col-span-2 pt-4">
+                    <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold p-3 rounded-lg shadow-md transition cursor-pointer">
+                        <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Guardar Registro en Tiempo Real
+                    </button>
+                </div>
+            </form>
+        </section>
+
+    </main>
+
+    <!-- Script de Firebase y Lógica -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCTDxtUKayLyjJn6BaIwf0MlIk0lcvu-Ak",
+            authDomain: "proteccion-civil-ocesa.firebaseapp.com",
+            databaseURL: "https://proteccion-civil-ocesa-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "proteccion-civil-ocesa",
+            storageBucket: "proteccion-civil-ocesa.firebasestorage.app",
+            messagingSenderId: "963268505050",
+            appId: "1:963268505050:web:8af18d3d5d3ba8ec9fa4e3",
+            measurementId: "G-YCSB4M2LCC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let eventosGlobal = [];
+
+        // Leer datos en tiempo real desde Firebase
+        const eventosRef = ref(db, 'eventos');
+        onValue(eventosRef, (snapshot) => {
+            const data = snapshot.val();
+            eventosGlobal = [];
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    eventosGlobal.push({ id: key, ...data[key] });
+                });
+            }
+            renderTabla(eventosGlobal);
+            actualizarReportes();
+        });
+
+        // Guardar nuevo evento
+        window.guardarEvento = function(e) {
+            e.preventDefault();
+            const fechaVal = document.getElementById('inp-fecha').value;
+            const fechaObj = new Date(fechaVal);
+
+            const nuevoReg = {
+                evento: document.getElementById('inp-evento').value,
+                fecha: fechaVal,
+                anio: fechaObj.getFullYear(),
+                mes: fechaObj.getMonth() + 1,
+                trimestre: Math.floor(fechaObj.getMonth() / 3) + 1,
+                inmueble: document.getElementById('inp-inmueble').value,
+                aforo: document.getElementById('inp-aforo').value,
+                horario: document.getElementById('inp-horario').value,
+                sacm: document.getElementById('inp-sacm').value,
+                aviso: document.getElementById('inp-aviso').value,
+                ssc: document.getElementById('inp-ssc').value,
+                pepc: document.getElementById('inp-pepc').value,
+                dro: document.getElementById('inp-dro').value,
+                pagoSsc: document.getElementById('inp-pagossc').value,
+                bomberos: document.getElementById('inp-bomberos').value,
+                amenidades: document.getElementById('inp-amenidades').value,
+                timestamp: Date.now()
+            };
+
+            const nuevoRef = push(eventosRef);
+            set(nuevoRef, nuevoReg).then(() => {
+                alert("¡Registro guardado con éxito!");
+                document.getElementById('form-evento').reset();
+                switchTab('tabla');
+            }).catch(err => {
+                alert("Error al guardar: " + err.message);
+            });
+        };
+
+        // Eliminar registro
+        window.eliminarEvento = function(id) {
+            if (confirm("¿Estás seguro de eliminar este registro?")) {
+                remove(ref(db, 'eventos/' + id));
+            }
+        };
+
+        // Renderizar tabla
+        function renderTabla(data) {
+            const tbody = document.getElementById('tabla-cuerpo');
+            tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-slate-400">No hay registros almacenados.</td></tr>`;
+                return;
+            }
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-slate-700">${item.evento}</td>
+                    <td class="p-3">${item.fecha}</td>
+                    <td class="p-3">${item.inmueble}</td>
+                    <td class="p-3">${item.aforo}</td>
+                    <td class="p-3">${item.horario}</td>
+                    <td class="p-3">${item.dro || '-'}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.sacm === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.sacm}</span></td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.pepc === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.pepc}</span></td>
+                    <td class="p-3">${item.pagoSsc || '-'}</td>
+                    <td class="p-3">${item.amenidades || '-'}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="eliminarEvento('${item.id}')" class="text-rose-500 hover:text-rose-700 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Actualizar KPIs y Reportes según periodo
+        window.actualizarReportes = function() {
+            const filtro = document.getElementById('filtro-periodo').value;
+            const ahora = new Date();
+            const mesActual = ahora.getMonth() + 1;
+            const trimestreActual = Math.floor(ahora.getMonth() / 3) + 1;
+            const anioActual = ahora.getFullYear();
+
+            let filtrados = eventosGlobal.filter(item => {
+                if (filtro === 'mensual') return item.mes === mesActual && item.anio === anioActual;
+                if (filtro === 'trimestral') return item.trimestre === trimestreActual && item.anio === anioActual;
+                if (filtro === 'anual') return item.anio === anioActual;
+                return true;
+            });
+
+            document.getElementById('kpi-total-eventos').innerText = filtrados.length;
+            
+            // Calcular aforo sumando números aproximados
+            let totalAsistentes = filtrados.reduce((acc, curr) => {
+                let num = parseInt(curr.aforo.replace(/[^0-9]/g, '')) || 0;
+                return acc + num;
+            }, 0);
+            document.getElementById('kpi-aforo').innerText = totalAsistentes.toLocaleString() + " asis.";
+
+            let pepcSis = filtrados.filter(i => i.pepc === 'SI').length;
+            let porcentajePepc = filtrados.length > 0 ? Math.round((pepcSis / filtrados.length) * 100) : 0;
+            document.getElementById('kpi-pepc').innerText = porcentajePepc + "%";
+
+            let pyroCount = filtrados.filter(i => i.amenidades && i.amenidades.toLowerCase().includes('pyro')).length;
+            document.getElementById('kpi-pyro').innerText = pyroCount;
+
+            // Resumen ejecutivo
+            document.getElementById('resumen-ejecutivo').innerHTML = `
+                <p>📊 En el periodo seleccionado se registran <b>${filtrados.length} eventos</b> operados.</p>
+                <p>🛡️ El <b>${porcentajePepc}%</b> cuenta con Programa Especial de Protección Civil (PEPC) liberado y aprobado.</p>
+                <p>⚡ Se han supervisado escenarios con afluencia total estimada de <b>${totalAsistentes.toLocaleString()} personas</b> bajo los horarios establecidos.</p>
+            `;
+        };
+
+        // Buscador en tabla
+        window.filtrarTabla = function() {
+            const query = document.getElementById('buscador').value.toLowerCase();
+            const filtrados = eventosGlobal.filter(i => 
+                i.evento.toLowerCase().includes(query) || i.inmueble.toLowerCase().includes(query)
+            );
+            renderTabla(filtrados);
+        };
+
+        // Navegación por pestañas
+        window.switchTab = function(tab) {
+            ['dashboard', 'tabla', 'nuevo'].forEach(t => {
+                document.getElementById('view-' + t).classList.add('hidden');
+                document.getElementById('btn-' + t).classList.remove('bg-amber-600');
+                document.getElementById('btn-' + t).classList.add('bg-slate-800');
+            });
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('btn-' + tab).classList.remove('bg-slate-800');
+            document.getElementById('btn-' + tab).classList.add('bg-amber-600');
+        };
+    </script>
+</body>
+</html>
