@@ -4,23 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Protección Civil - Monitoreo y Reportes en Tiempo Real</title>
-    <!-- Tailwind CSS para diseño moderno -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- FontAwesome para iconos -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS para lectura y exportación nativa de archivos XLSX/XLS -->
+    <!-- SheetJS para XLSX -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
 
     <!-- Navbar -->
     <header class="bg-slate-900 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
             <div class="flex items-center space-x-3">
-                <i class="fa-solid fa-shield-halved text-amber-500 text-2xl"></i>
-                <h1 class="text-xl font-bold tracking-wide">Protección Civil | OCESA</h1>
+                <img src="./ocesa_logo.jpeg" alt="Logo OCESA" class="h-10 w-auto object-contain bg-white p-1 rounded-md shadow-sm" onerror="this.style.display='none'">
+                <div class="border-l border-slate-700 pl-3">
+                    <h1 class="text-xl font-bold tracking-wide text-white">Protección Civil</h1>
+                    <p class="text-xs text-amber-400 font-semibold uppercase tracking-wider">Monitoreo y Reportes OCESA</p>
+                </div>
             </div>
-            <nav class="flex flex-wrap justify-center gap-2 mt-3 md:mt-0">
+            <nav class="flex flex-wrap justify-center gap-2 mt-2 md:mt-0">
                 <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3.5 py-2 bg-amber-600 rounded-lg text-sm font-semibold transition cursor-pointer">
                     <i class="fa-solid fa-chart-pie mr-1.5"></i> Reportes
                 </button>
@@ -230,7 +233,7 @@
     <!-- Script de Firebase y Lógica -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, push, set, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCTDxtUKayLyjJn6BaIwf0MlIk0lcvu-Ak",
@@ -262,6 +265,116 @@
             renderTabla(eventosGlobal);
             actualizarReportes();
         });
+
+        // Helper para convertir fechas de Excel (números de serie)
+        function parseExcelDate(val) {
+            if (!val) return { fechaStr: '2026-10-15', dateObj: new Date('2026-10-15') };
+            if (val instanceof Date) return { fechaStr: val.toISOString().split('T')[0], dateObj: val };
+            if (typeof val === 'number') {
+                const dateObj = new Date(Math.round((val - 25569) * 86400 * 1000));
+                const fechaStr = dateObj.toISOString().split('T')[0];
+                return { fechaStr, dateObj };
+            }
+            const dateObj = new Date(val);
+            if (!isNaN(dateObj.getTime())) {
+                return { fechaStr: dateObj.toISOString().split('T')[0], dateObj };
+            }
+            return { fechaStr: String(val), dateObj: new Date('2026-10-15') };
+        }
+
+        // Carga Masiva Ultra Rápida (Batch Update)
+        window.procesarExcel = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('progreso-excel').classList.remove('hidden');
+            document.getElementById('excel-status').innerText = 'Leyendo archivo Excel...';
+            document.getElementById('excel-bar').style.width = '30%';
+
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const firstSheet = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheet];
+                    
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                    
+                    document.getElementById('excel-status').innerText = 'Procesando datos...';
+                    document.getElementById('excel-bar').style.width = '60%';
+
+                    const batchUpdates = {};
+                    let cargados = 0;
+
+                    rows.forEach((r) => {
+                        const getVal = (colNames) => {
+                            for (let name of colNames) {
+                                const key = Object.keys(r).find(k => k.trim().toUpperCase() === name.toUpperCase());
+                                if (key && r[key] !== undefined && r[key] !== "") return r[key].toString().trim();
+                            }
+                            return '';
+                        };
+
+                        const nomEvento = getVal(['EVENTO', 'EVENTO ']);
+                        if (!nomEvento || nomEvento.toUpperCase() === 'EVENTO') return;
+
+                        const rawFecha = r[Object.keys(r).find(k => k.trim().toUpperCase() === 'FECHA')];
+                        const { fechaStr, dateObj } = parseExcelDate(rawFecha);
+
+                        const newKey = push(eventosRef).key;
+                        batchUpdates[`eventos/${newKey}`] = {
+                            evento: nomEvento,
+                            fecha: fechaStr,
+                            anio: dateObj.getFullYear() || 2026,
+                            mes: dateObj.getMonth() + 1 || 10,
+                            trimestre: Math.floor((dateObj.getMonth() || 9) / 3) + 1,
+                            inmueble: getVal(['INMUEBLE', 'INMUEBLE ']),
+                            aforo: getVal(['AFORO', 'AFORO ']),
+                            horario: getVal(['HORARIO EVENTO', 'HORARIO']),
+                            dro: getVal(['DRO']),
+                            sacm: getVal(['CARTA SACM', 'SACM']) || 'NO',
+                            aviso: getVal(['AVISO']) || 'NO',
+                            ssc: getVal(['SSC RESOLUCIÓN', 'SSC']) || 'NO',
+                            pepc: getVal(['REGISTRO PEPC', 'PEPC']) || 'NO',
+                            pagoSsc: getVal(['PAGO SSC']) || 'NO',
+                            bomberos: getVal(['HORARIOS BOMBEROS', 'BOMBEROS']),
+                            amenidades: `PYRO: ${getVal(['PYRO']) || 'NO'} | DRON: ${getVal(['DRON']) || 'NO'} | ACTIVACIONES: ${getVal(['ACTIVACIONES']) || 'NINGUNA'}`,
+                            timestamp: Date.now()
+                        };
+                        cargados++;
+                    });
+
+                    if (cargados === 0) {
+                        alert("No se encontraron eventos válidos en el archivo. Verifica los nombres de las columnas.");
+                        document.getElementById('progreso-excel').classList.add('hidden');
+                        return;
+                    }
+
+                    document.getElementById('excel-status').innerText = 'Guardando en Firebase...';
+                    document.getElementById('excel-bar').style.width = '90%';
+
+                    // Enviar todas las filas juntas a Firebase en una sola operación
+                    await update(ref(db), batchUpdates);
+
+                    document.getElementById('excel-bar').style.width = '100%';
+                    document.getElementById('excel-status').innerText = '¡Completado!';
+
+                    setTimeout(() => {
+                        alert(`¡Éxito! Se cargaron ${cargados} eventos a la base de datos de inmediato.`);
+                        document.getElementById('progreso-excel').classList.add('hidden');
+                        document.getElementById('input-excel').value = '';
+                        switchTab('tabla');
+                    }, 400);
+
+                } catch (err) {
+                    console.error("Error al procesar Excel:", err);
+                    alert("Ocurrió un error al procesar el archivo Excel: " + err.message);
+                    document.getElementById('progreso-excel').classList.add('hidden');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
 
         // Guardar evento individual
         window.guardarEvento = function(e) {
@@ -297,82 +410,6 @@
             }).catch(err => {
                 alert("Error al guardar: " + err.message);
             });
-        };
-
-        // Carga Masiva desde Excel (.xlsx / .xls / .csv)
-        window.procesarExcel = function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            document.getElementById('progreso-excel').classList.remove('hidden');
-            document.getElementById('excel-status').innerText = 'Leyendo hoja de Excel...';
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheet = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheet];
-                
-                // Convertir a JSON
-                const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-                let cargados = 0;
-
-                for (let i = 0; i < rows.length; i++) {
-                    const r = rows[i];
-                    
-                    const getVal = (colNames) => {
-                        for (let name of colNames) {
-                            const key = Object.keys(r).find(k => k.trim().toUpperCase() === name.toUpperCase());
-                            if (key && r[key] !== undefined && r[key] !== "") return r[key].toString().trim();
-                        }
-                        return '';
-                    };
-
-                    const nomEvento = getVal(['EVENTO', 'EVENTO ']);
-                    if (!nomEvento || nomEvento.toUpperCase() === 'EVENTO') continue;
-
-                    const rawFecha = getVal(['FECHA']);
-                    let dateObj = new Date(rawFecha);
-                    if (isNaN(dateObj.getTime())) dateObj = new Date('2026-10-15');
-
-                    const regObj = {
-                        evento: nomEvento,
-                        fecha: rawFecha || '2026-10-15',
-                        anio: dateObj.getFullYear() || 2026,
-                        mes: dateObj.getMonth() + 1 || 10,
-                        trimestre: Math.floor((dateObj.getMonth() || 9) / 3) + 1,
-                        inmueble: getVal(['INMUEBLE', 'INMUEBLE ']),
-                        aforo: getVal(['AFORO', 'AFORO ']),
-                        horario: getVal(['HORARIO EVENTO', 'HORARIO']),
-                        dro: getVal(['DRO']),
-                        sacm: getVal(['CARTA SACM', 'SACM']) || 'NO',
-                        aviso: getVal(['AVISO']) || 'NO',
-                        ssc: getVal(['SSC RESOLUCIÓN', 'SSC']) || 'NO',
-                        pepc: getVal(['REGISTRO PEPC', 'PEPC']) || 'NO',
-                        pagoSsc: getVal(['PAGO SSC']) || 'NO',
-                        bomberos: getVal(['HORARIOS BOMBEROS', 'BOMBEROS']),
-                        amenidades: `PYRO: ${getVal(['PYRO']) || 'NO'} | DRON: ${getVal(['DRON']) || 'NO'} | ACTIVACIONES: ${getVal(['ACTIVACIONES']) || 'NINGUNA'}`,
-                        timestamp: Date.now()
-                    };
-
-                    const newRef = push(eventosRef);
-                    await set(newRef, regObj);
-                    
-                    cargados++;
-                    let pct = Math.round((cargados / rows.length) * 100);
-                    document.getElementById('excel-bar').style.width = pct + '%';
-                    document.getElementById('excel-status').innerText = `Procesados ${cargados} registros`;
-                }
-
-                setTimeout(() => {
-                    alert(`¡Éxito! Se cargaron ${cargados} eventos históricos a la base de datos.`);
-                    document.getElementById('progreso-excel').classList.add('hidden');
-                    document.getElementById('input-excel').value = '';
-                    switchTab('tabla');
-                }, 500);
-            };
-            reader.readAsArrayBuffer(file);
         };
 
         // Exportar Reportes Resumidos a Excel
