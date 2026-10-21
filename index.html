@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Protección Civil - Monitoreo y Reportes en Tiempo Real</title>
+    <title>Protección Civil - Monitoreo y Reportes OCESA</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- SheetJS para XLSX -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- jsPDF y AutoTable para Generación de Reportes PDF -->
+    <!-- jsPDF y AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
 
     <!-- Navbar -->
-    <header class="bg-slate-900 text-white shadow-md">
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-[95%] mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('home')">
                 <img src="./ocesa_logo.jpeg" alt="Logo OCESA" class="h-10 w-auto object-contain bg-white p-1 rounded-md shadow-sm" onerror="this.style.display='none'">
                 <div class="border-l border-slate-700 pl-3">
                     <h1 class="text-xl font-bold tracking-wide text-white">Protección Civil</h1>
@@ -27,7 +27,10 @@
                 </div>
             </div>
             <nav class="flex flex-wrap justify-center items-center gap-2 mt-2 md:mt-0">
-                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3.5 py-2 bg-amber-600 rounded-lg text-sm font-semibold transition cursor-pointer">
+                <button onclick="switchTab('home')" id="btn-home" class="px-3.5 py-2 bg-amber-600 rounded-lg text-sm font-semibold transition cursor-pointer">
+                    <i class="fa-solid fa-house mr-1.5"></i> Inicio
+                </button>
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
                     <i class="fa-solid fa-chart-pie mr-1.5"></i> Reportes
                 </button>
                 <button onclick="switchTab('tabla')" id="btn-tabla" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-semibold transition cursor-pointer">
@@ -42,13 +45,13 @@
 
                 <!-- Estado de Login -->
                 <div id="user-status-container" class="ml-2 pl-3 border-l border-slate-700 flex items-center gap-2">
-                    <button onclick="switchTab('login')" id="btn-login" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-bold transition cursor-pointer">
+                    <button onclick="switchTab('login')" id="btn-login" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-lg text-xs font-bold transition cursor-pointer shadow">
                         <i class="fa-solid fa-right-to-bracket mr-1"></i> Iniciar Sesión
                     </button>
                     <div id="user-logged" class="hidden flex items-center gap-2 text-xs">
-                        <span id="user-email" class="text-slate-300 font-medium"></span>
-                        <button onclick="cerrarSesion()" class="text-rose-400 hover:text-rose-300 ml-1 cursor-pointer" title="Cerrar Sesión">
-                            <i class="fa-solid fa-power-off"></i>
+                        <span id="user-email" class="text-slate-300 font-medium bg-slate-800 px-2.5 py-1 rounded-md border border-slate-700"></span>
+                        <button onclick="cerrarSesion()" class="text-rose-400 hover:text-rose-300 p-1.5 cursor-pointer" title="Cerrar Sesión">
+                            <i class="fa-solid fa-power-off text-sm"></i>
                         </button>
                     </div>
                 </div>
@@ -59,30 +62,107 @@
     <!-- Contenido Principal -->
     <main class="flex-grow max-w-[95%] w-full mx-auto p-4 md:p-6">
 
-        <!-- 0. SECCIÓN LOGIN -->
-        <section id="view-login" class="hidden max-w-md mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md my-10">
+        <!-- 0. PANTALLA DE BIENVENIDA (HOME / LANDING PAGE) -->
+        <section id="view-home" class="space-y-10 py-6">
+            <!-- Hero Banner -->
+            <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white rounded-2xl p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
+                <div class="max-w-2xl space-y-4 z-10">
+                    <div class="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 text-xs font-bold px-3 py-1 rounded-full border border-amber-500/30">
+                        <i class="fa-solid fa-shield-halved"></i> Sistema Oficial OCESA
+                    </div>
+                    <h2 class="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+                        Plataforma de Monitoreo y Reportes de <span class="text-amber-400">Protección Civil</span>
+                    </h2>
+                    <p class="text-slate-300 text-sm md:text-base leading-relaxed">
+                        Bienvenido al portal centralizado para la gestión, dictaminación y supervisión en tiempo real de eventos masivos, permisos institucionales (SACM, PEPC, SSC), cobertura de Bomberos y trazabilidad operativa.
+                    </p>
+                    <div class="flex flex-wrap items-center gap-3 pt-2">
+                        <button onclick="switchTab('login')" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-3 rounded-xl text-sm shadow-lg transition cursor-pointer flex items-center">
+                            <i class="fa-solid fa-right-to-bracket mr-2"></i> Acceso Personal Autorizado
+                        </button>
+                        <button onclick="switchTab('dashboard')" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold px-6 py-3 rounded-xl text-sm border border-slate-700 transition cursor-pointer flex items-center">
+                            <i class="fa-solid fa-chart-pie mr-2 text-amber-400"></i> Consultar Reportes Públicos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjeta / Ilustración Hero -->
+                <div class="z-10 w-full md:w-80 bg-slate-900/80 backdrop-blur border border-slate-700 p-6 rounded-xl shadow-2xl text-center space-y-4">
+                    <div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-amber-500/20">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-base">Acceso Rápido</h3>
+                        <p class="text-xs text-slate-400">Ingresa tus credenciales registradas para habilitar la captura en campo.</p>
+                    </div>
+                    <button onclick="switchTab('login')" class="w-full bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold py-2.5 px-4 rounded-lg text-xs border border-amber-500/30 transition cursor-pointer">
+                        Ir al Login de Usuarios
+                    </button>
+                </div>
+            </div>
+
+            <!-- Características Principales -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200/80 space-y-2 hover:shadow-md transition">
+                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm">Tiempo Real</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Sincronización instantánea de registros y dictámenes desde cualquier dispositivo en campo.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200/80 space-y-2 hover:shadow-md transition">
+                    <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-file-excel"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm">Carga Masiva Excel</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Importación en segundos de machotes de eventos históricos en formatos .xlsx y .csv.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200/80 space-y-2 hover:shadow-md transition">
+                    <div class="w-10 h-10 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm">Reportes en PDF</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Generación de informes ejecutivos foliados y estadísticos para auditorías e inspecciones.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200/80 space-y-2 hover:shadow-md transition">
+                    <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm">Trazabilidad Total</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Bitácora inalterable con registro automático de usuario, fecha y hora en cada modificación.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 1. SECCIÓN LOGIN DE USUARIOS -->
+        <section id="view-login" class="hidden max-w-md mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-slate-200 my-10">
             <div class="text-center mb-6">
-                <i class="fa-solid fa-user-shield text-4xl text-amber-600 mb-2"></i>
+                <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold mb-3 border border-amber-200">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
                 <h2 class="text-xl font-bold text-slate-800">Acceso Personal Autorizado</h2>
-                <p class="text-xs text-slate-500">Ingresa tus credenciales para registrar o editar eventos</p>
+                <p class="text-xs text-slate-500">Ingresa tus credenciales registradas en Firebase Auth</p>
             </div>
             <form id="form-login" onsubmit="iniciarSesion(event)" class="space-y-4 text-sm">
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Correo Electrónico</label>
-                    <input type="email" id="login-email" required class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                    <input type="email" id="login-email" required placeholder="supervisor@ocesa.com" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Contraseña</label>
-                    <input type="password" id="login-password" required class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                    <input type="password" id="login-password" required placeholder="••••••••" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
-                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold p-3 rounded-lg shadow-md transition cursor-pointer">
-                    Iniciar Sesión
+                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold p-3 rounded-lg shadow-md transition cursor-pointer flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
                 </button>
             </form>
         </section>
 
-        <!-- 1. SECCIÓN DE REPORTES Y MÉTRICAS -->
-        <section id="view-dashboard" class="space-y-6">
+        <!-- 2. SECCIÓN DE REPORTES Y MÉTRICAS -->
+        <section id="view-dashboard" class="hidden space-y-6">
             <div class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm gap-4">
                 <h2 class="text-lg font-bold text-slate-700"><i class="fa-solid fa-filter text-amber-600 mr-2"></i> Filtros de Período</h2>
                 <div class="flex flex-wrap items-center gap-3">
@@ -129,7 +209,7 @@
             </div>
         </section>
 
-        <!-- 2. SECCIÓN TABLA GENERAL EN TIEMPO REAL -->
+        <!-- 3. SECCIÓN TABLA GENERAL EN TIEMPO REAL -->
         <section id="view-tabla" class="hidden space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm gap-3">
                 <h2 class="text-lg font-bold text-slate-700"><i class="fa-solid fa-database text-amber-600 mr-2"></i> Base de Datos en Tiempo Real</h2>
@@ -175,7 +255,7 @@
             </div>
         </section>
 
-        <!-- 3. SECCIÓN CAPTURA / EDICIÓN -->
+        <!-- 4. SECCIÓN CAPTURA / EDICIÓN -->
         <section id="view-nuevo" class="hidden max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm">
             <div class="flex justify-between items-center mb-6 border-b pb-3">
                 <h2 id="form-titulo" class="text-xl font-bold text-slate-800"><i class="fa-solid fa-file-pen text-amber-600 mr-2"></i> Captura de Evento - Protección Civil</h2>
@@ -294,13 +374,13 @@
             </form>
         </section>
 
-        <!-- 4. SECCIÓN CARGA MASIVA DE EXCEL -->
+        <!-- 5. SECCIÓN CARGA MASIVA DE EXCEL -->
         <section id="view-excel" class="hidden max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm">
             <h2 class="text-xl font-bold text-slate-800 mb-4 border-b pb-3">
                 <i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i> Carga Masiva desde Excel (.xlsx / .xls / .csv)
             </h2>
             <p class="text-xs text-slate-600 mb-6 leading-relaxed">
-                Selecciona tu archivo de machote directamente en formato <b>Excel (.xlsx o .xls)</b>. El sistema identificará todas las columnas incluyendo <code>SUPERVISION</code>, <code># UNIDAD</code> y <code>PREVENCION</code>.
+                Selecciona tu archivo de machote directamente en formato <b>Excel (.xlsx o .xls)</b>. El sistema identificará todas las columnas automáticamente.
             </p>
 
             <label for="input-excel" class="block border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
@@ -376,7 +456,7 @@
         };
 
         window.cerrarSesion = function() {
-            signOut(auth).then(() => switchTab('dashboard'));
+            signOut(auth).then(() => switchTab('home'));
         };
 
         // Leer datos desde Firebase
@@ -684,7 +764,7 @@
             });
         }
 
-        // GENERAR REPORTE PDF COMPLETO Y ESTADÍSTICO
+        // GENERAR REPORTE PDF COMPLETO
         window.generarReportePDF = function() {
             if (eventosFiltradosActuales.length === 0) {
                 alert("No hay eventos en el periodo seleccionado para generar el PDF.");
@@ -696,8 +776,7 @@
             const filtro = document.getElementById('filtro-periodo').value.toUpperCase();
             const fechaEmision = new Date().toLocaleString();
 
-            // Encabezado
-            doc.setFillColor(15, 23, 42); // slate-900
+            doc.setFillColor(15, 23, 42);
             doc.rect(0, 0, 297, 24, 'F');
             
             doc.setFont('helvetica', 'bold');
@@ -706,10 +785,9 @@
             doc.text("PROTECCIÓN CIVIL OCESA - REPORTE OPERATIVO Y ESTADÍSTICO", 14, 12);
 
             doc.setFontSize(9);
-            doc.setTextColor(251, 191, 36); // amber-400
+            doc.setTextColor(251, 191, 36);
             doc.text(`PERIODO EVALUADO: ${filtro} | EMISIÓN: ${fechaEmision}`, 14, 18);
 
-            // Sección de Métricas (KPIs)
             let totalAsistentes = eventosFiltradosActuales.reduce((acc, curr) => acc + (parseInt((curr.aforo || '').toString().replace(/[^0-9]/g, '')) || 0), 0);
             let pepcSis = eventosFiltradosActuales.filter(i => i.pepc === 'SI').length;
             let porcentajePepc = Math.round((pepcSis / eventosFiltradosActuales.length) * 100);
@@ -727,12 +805,10 @@
             doc.text(`Cumplimiento PEPC: ${porcentajePepc}%`, 170, 37);
             doc.text(`Eventos con Pirotecnia: ${pyroCount}`, 230, 37);
 
-            // Resumen Ejecutivo
             doc.setFontSize(8);
             doc.setTextColor(100, 116, 139);
-            doc.text(`* Este informe certifica el cumplimiento de los Programas Especiales de Protección Civil y dictámenes de bomberos para los escenarios operados.`, 14, 55);
+            doc.text(`* Este informe certifica el cumplimiento de los Programas Especiales de Protección Civil y dictámenes de bomberos.`, 14, 55);
 
-            // Tabla de Eventos
             const tableData = eventosFiltradosActuales.map(i => [
                 i.evento,
                 i.fecha,
@@ -854,14 +930,14 @@
             renderTabla(filtrados);
         };
 
-        // Navegación
+        // Navegación de Pestañas (incluyendo Home)
         window.switchTab = function(tab) {
             if ((tab === 'nuevo' || tab === 'excel') && !currentUser) {
                 alert("Debes iniciar sesión para acceder a esta sección.");
                 tab = 'login';
             }
 
-            ['dashboard', 'tabla', 'nuevo', 'excel', 'login'].forEach(t => {
+            ['home', 'dashboard', 'tabla', 'nuevo', 'excel', 'login'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 const btn = document.getElementById('btn-' + t);
                 if (btn) {
@@ -869,6 +945,7 @@
                     btn.classList.add('bg-slate-800');
                 }
             });
+            
             document.getElementById('view-' + tab).classList.remove('hidden');
             const activeBtn = document.getElementById('btn-' + tab);
             if (activeBtn) {
