@@ -137,7 +137,7 @@
             <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
                 <table id="tabla-eventos" class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-slate-800 text-white uppercase tracking-wider">
+                        <tr class="bg-slate-800 text-white uppercase tracking-wider whitespace-nowrap">
                             <th class="p-3">Evento</th>
                             <th class="p-3">Fecha</th>
                             <th class="p-3">Inmueble</th>
@@ -147,7 +147,12 @@
                             <th class="p-3">SACM</th>
                             <th class="p-3">PEPC</th>
                             <th class="p-3">Pago SSC</th>
-                            <th class="p-3">Amenidades</th>
+                            <th class="p-3">Pyro</th>
+                            <th class="p-3">Dron</th>
+                            <th class="p-3">Activaciones</th>
+                            <th class="p-3">Sampling</th>
+                            <th class="p-3">Food Truck</th>
+                            <th class="p-3">Inflables</th>
                             <th class="p-3">Última Modificación</th>
                             <th class="p-3 text-center">Acciones</th>
                         </tr>
@@ -229,9 +234,32 @@
                     <input type="text" id="inp-bomberos" placeholder="16:00 hrs (# Unidades: 1)" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
                 </div>
 
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Amenidades (Pyro / Dron / Alimentos)</label>
-                    <input type="text" id="inp-amenidades" placeholder="PYRO: SI | DRON: NO" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                <!-- Amenidades y Elementos Especiales Separados -->
+                <div class="md:col-span-2 bg-amber-50 p-4 rounded-lg border border-amber-200 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-bold text-xs text-amber-900 mb-1">PYRO (Pirotecnia)</label>
+                        <input type="text" id="inp-pyro" placeholder="NO / Empresa / Tipo" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-xs text-amber-900 mb-1">DRON</label>
+                        <input type="text" id="inp-dron" placeholder="SI / NO" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-xs text-amber-900 mb-1">ACTIVACIONES</label>
+                        <input type="text" id="inp-activaciones" placeholder="Marcas / Stands" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-xs text-amber-900 mb-1">SAMPLING</label>
+                        <input type="text" id="inp-sampling" placeholder="Marcas sampling" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-xs text-amber-900 mb-1">FOOD TRUCK</label>
+                        <input type="text" id="inp-foodtruck" placeholder="SI / NO / Marcas" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-xs text-amber-900 mb-1">INFLABLES</label>
+                        <input type="text" id="inp-inflables" placeholder="SI / NO" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                    </div>
                 </div>
 
                 <div class="md:col-span-2 pt-4">
@@ -248,7 +276,7 @@
                 <i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i> Carga Masiva desde Excel (.xlsx / .xls / .csv)
             </h2>
             <p class="text-xs text-slate-600 mb-6 leading-relaxed">
-                Selecciona tu archivo de machote directamente en formato <b>Excel (.xlsx o .xls)</b> o CSV. El sistema identificará las columnas (<code>EVENTO</code>, <code>FECHA</code>, <code>INMUEBLE</code>, <code>AFORO</code>, etc.) y guardará los datos históricos en Firebase Realtime Database asociándolos a tu usuario de auditoría.
+                Selecciona tu archivo de machote directamente en formato <b>Excel (.xlsx o .xls)</b> o CSV. El sistema identificará las columnas (<code>EVENTO</code>, <code>FECHA</code>, <code>INMUEBLE</code>, <code>AFORO</code>, <code>PYRO</code>, <code>DRON</code>, <code>ACTIVACIONES</code>, <code>SAMPLING</code>, <code>FOOD TRUCK</code>, <code>INFLABLES</code>, etc.) y guardará los datos históricos en Firebase.
             </p>
 
             <label for="input-excel" class="block border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
@@ -363,7 +391,7 @@
             return { fechaStr: String(val), dateObj: new Date('2026-10-15') };
         }
 
-        // Carga Masiva desde Excel con Registro de Auditoría
+        // Carga Masiva desde Excel mapeando las columnas exactas
         window.procesarExcel = function(e) {
             if (!currentUser) {
                 alert("Debes iniciar sesión para cargar archivos.");
@@ -427,7 +455,12 @@
                             pepc: getVal(['REGISTRO PEPC', 'PEPC']) || 'NO',
                             pagoSsc: getVal(['PAGO SSC']) || 'NO',
                             bomberos: getVal(['HORARIOS BOMBEROS', 'BOMBEROS']),
-                            amenidades: `PYRO: ${getVal(['PYRO']) || 'NO'} | DRON: ${getVal(['DRON']) || 'NO'} | ACTIVACIONES: ${getVal(['ACTIVACIONES']) || 'NINGUNA'}`,
+                            pyro: getVal(['PYRO', 'PYRO ']) || 'NO',
+                            dron: getVal(['DRON', 'DRON ']) || 'NO',
+                            activaciones: getVal(['ACTIVACIONES', 'ACTIVACIONES ']) || '-',
+                            sampling: getVal(['SAMPLING', 'SAMPLING ']) || '-',
+                            foodtruck: getVal(['FOOD TRUCK', 'FOOD TRUCK ']) || '-',
+                            inflables: getVal(['INFLABES ', 'INFLABLES', 'INFLABLES ']) || 'NO',
                             creadoPor: `${currentUser.email} (${ahora})`,
                             modificadoPor: `${currentUser.email} (${ahora})`,
                             timestamp: Date.now()
@@ -464,7 +497,7 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // Guardar o Editar evento con Auditoría
+        // Guardar o Editar evento desglosando amenidades
         window.guardarEvento = function(e) {
             e.preventDefault();
 
@@ -495,19 +528,19 @@
                 dro: document.getElementById('inp-dro').value,
                 pagoSsc: document.getElementById('inp-pagossc').value,
                 bomberos: document.getElementById('inp-bomberos').value,
-                amenidades: document.getElementById('inp-amenidades').value,
+                pyro: document.getElementById('inp-pyro').value || 'NO',
+                dron: document.getElementById('inp-dron').value || 'NO',
+                activaciones: document.getElementById('inp-activaciones').value || '-',
+                sampling: document.getElementById('inp-sampling').value || '-',
+                foodtruck: document.getElementById('inp-foodtruck').value || '-',
+                inflables: document.getElementById('inp-inflables').value || 'NO',
                 modificadoPor: `${currentUser.email} (${fechaAudit})`,
                 timestamp: Date.now()
             };
 
             if (editId) {
-                // Conservar CreadoPor existente
                 const existente = eventosGlobal.find(i => i.id === editId);
-                if (existente && existente.creadoPor) {
-                    regData.creadoPor = existente.creadoPor;
-                } else {
-                    regData.creadoPor = `${currentUser.email} (${fechaAudit})`;
-                }
+                regData.creadoPor = (existente && existente.creadoPor) ? existente.creadoPor : `${currentUser.email} (${fechaAudit})`;
 
                 set(ref(db, 'eventos/' + editId), regData).then(() => {
                     alert("¡Evento actualizado correctamente!");
@@ -549,7 +582,12 @@
             document.getElementById('inp-dro').value = ev.dro || '';
             document.getElementById('inp-pagossc').value = ev.pagoSsc || 'SI';
             document.getElementById('inp-bomberos').value = ev.bomberos || '';
-            document.getElementById('inp-amenidades').value = ev.amenidades || '';
+            document.getElementById('inp-pyro').value = ev.pyro || '';
+            document.getElementById('inp-dron').value = ev.dron || '';
+            document.getElementById('inp-activaciones').value = ev.activaciones || '';
+            document.getElementById('inp-sampling').value = ev.sampling || '';
+            document.getElementById('inp-foodtruck').value = ev.foodtruck || '';
+            document.getElementById('inp-inflables').value = ev.inflables || '';
 
             document.getElementById('form-titulo').innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-600 mr-2"></i> Editar Evento`;
             document.getElementById('btn-submit-form').innerHTML = `<i class="fa-solid fa-rotate mr-2"></i> Actualizar Registro`;
@@ -577,32 +615,37 @@
             }
         };
 
-        // Renderizar tabla con auditoría visible
+        // Renderizar tabla con todas las columnas individuales
         function renderTabla(data) {
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-slate-400">No hay registros almacenados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="17" class="p-4 text-center text-slate-400">No hay registros almacenados.</td></tr>`;
                 return;
             }
             data.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition";
                 tr.innerHTML = `
-                    <td class="p-3 font-semibold text-slate-700">${item.evento}</td>
-                    <td class="p-3">${item.fecha}</td>
-                    <td class="p-3">${item.inmueble}</td>
-                    <td class="p-3">${item.aforo}</td>
-                    <td class="p-3">${item.horario}</td>
-                    <td class="p-3">${item.dro || '-'}</td>
+                    <td class="p-3 font-semibold text-slate-700 whitespace-nowrap">${item.evento}</td>
+                    <td class="p-3 whitespace-nowrap">${item.fecha}</td>
+                    <td class="p-3 whitespace-nowrap">${item.inmueble}</td>
+                    <td class="p-3 whitespace-nowrap">${item.aforo}</td>
+                    <td class="p-3 whitespace-nowrap">${item.horario}</td>
+                    <td class="p-3 whitespace-nowrap">${item.dro || '-'}</td>
                     <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.sacm === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.sacm}</span></td>
                     <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.pepc === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.pepc}</span></td>
                     <td class="p-3">${item.pagoSsc || '-'}</td>
-                    <td class="p-3">${item.amenidades || '-'}</td>
-                    <td class="p-3 text-[10px] text-slate-500 leading-tight">
+                    <td class="p-3 font-semibold ${item.pyro && item.pyro !== 'NO' ? 'text-purple-700' : 'text-slate-400'}">${item.pyro || 'NO'}</td>
+                    <td class="p-3">${item.dron || 'NO'}</td>
+                    <td class="p-3 text-[11px]">${item.activaciones || '-'}</td>
+                    <td class="p-3 text-[11px]">${item.sampling || '-'}</td>
+                    <td class="p-3 text-[11px]">${item.foodtruck || '-'}</td>
+                    <td class="p-3">${item.inflables || 'NO'}</td>
+                    <td class="p-3 text-[10px] text-slate-500 leading-tight whitespace-nowrap">
                         <span class="block font-semibold text-slate-700">${item.modificadoPor || 'Sistema'}</span>
                     </td>
-                    <td class="p-3 text-center">
+                    <td class="p-3 text-center whitespace-nowrap">
                         ${currentUser ? `
                             <button onclick="editarEvento('${item.id}')" class="text-amber-600 hover:text-amber-800 mr-2 cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
                             <button onclick="eliminarEvento('${item.id}')" class="text-rose-500 hover:text-rose-700 cursor-pointer" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
@@ -613,7 +656,7 @@
             });
         }
 
-        // Exportar a Excel con Auditoría
+        // Exportar a Excel con las columnas exactas del machote
         window.exportarReporteExcel = function() {
             if (eventosFiltradosActuales.length === 0) {
                 alert("No hay registros en el periodo seleccionado para exportar.");
@@ -625,19 +668,27 @@
                 "FECHA": i.fecha,
                 "INMUEBLE": i.inmueble,
                 "AFORO": i.aforo,
-                "HORARIO": i.horario,
+                "HORARIO EVENTO": i.horario,
                 "DRO": i.dro || 'N/A',
                 "CARTA SACM": i.sacm,
+                "AVISO": i.aviso,
+                "SSC RESOLUCIÓN": i.ssc,
                 "REGISTRO PEPC": i.pepc,
                 "PAGO SSC": i.pagoSsc,
-                "AMENIDADES / NOTAS": i.amenidades,
+                "HORARIOS BOMBEROS": i.bomberos,
+                "PYRO": i.pyro,
+                "DRON": i.dron,
+                "ACTIVACIONES": i.activaciones,
+                "SAMPLING": i.sampling,
+                "FOOD TRUCK": i.foodtruck,
+                "INFLABLES": i.inflables,
                 "CREADO POR": i.creadoPor || 'N/A',
                 "ÚLTIMA MODIFICACIÓN": i.modificadoPor || 'N/A'
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataExport);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Reporte PC");
+            XLSX.utils.book_append_sheet(wb, ws, "Base de Datos PC");
 
             const filtro = document.getElementById('filtro-periodo').value;
             XLSX.writeFile(wb, `Reporte_Proteccion_Civil_${filtro}_2026.xlsx`);
@@ -674,7 +725,7 @@
             let porcentajePepc = eventosFiltradosActuales.length > 0 ? Math.round((pepcSis / eventosFiltradosActuales.length) * 100) : 0;
             document.getElementById('kpi-pepc').innerText = porcentajePepc + "%";
 
-            let pyroCount = eventosFiltradosActuales.filter(i => i.amenidades && i.amenidades.toLowerCase().includes('pyro: si')).length;
+            let pyroCount = eventosFiltradosActuales.filter(i => i.pyro && i.pyro !== 'NO' && i.pyro !== '').length;
             document.getElementById('kpi-pyro').innerText = pyroCount;
 
             document.getElementById('resumen-ejecutivo').innerHTML = `
@@ -684,12 +735,13 @@
             `;
         };
 
-        // Buscador ampliado a usuarios
+        // Buscador ampliado
         window.filtrarTabla = function() {
             const query = document.getElementById('buscador').value.toLowerCase();
             const filtrados = eventosGlobal.filter(i => 
                 (i.evento && i.evento.toLowerCase().includes(query)) || 
                 (i.inmueble && i.inmueble.toLowerCase().includes(query)) ||
+                (i.activaciones && i.activaciones.toLowerCase().includes(query)) ||
                 (i.modificadoPor && i.modificadoPor.toLowerCase().includes(query))
             );
             renderTabla(filtrados);
