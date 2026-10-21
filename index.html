@@ -128,7 +128,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm gap-3">
                 <h2 class="text-lg font-bold text-slate-700"><i class="fa-solid fa-database text-amber-600 mr-2"></i> Base de Datos en Tiempo Real</h2>
                 <div class="flex items-center gap-2 w-full sm:w-auto">
-                    <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar evento o inmueble..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64">
+                    <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar evento, inmueble o usuario..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64">
                     <button onclick="exportarTablaExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow transition cursor-pointer flex items-center whitespace-nowrap">
                         <i class="fa-solid fa-download mr-1.5"></i> Exportar XLSX
                     </button>
@@ -148,6 +148,7 @@
                             <th class="p-3">PEPC</th>
                             <th class="p-3">Pago SSC</th>
                             <th class="p-3">Amenidades</th>
+                            <th class="p-3">Última Modificación</th>
                             <th class="p-3 text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -247,7 +248,7 @@
                 <i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i> Carga Masiva desde Excel (.xlsx / .xls / .csv)
             </h2>
             <p class="text-xs text-slate-600 mb-6 leading-relaxed">
-                Selecciona tu archivo de machote directamente en formato <b>Excel (.xlsx o .xls)</b> o CSV. El sistema identificará las columnas (<code>EVENTO</code>, <code>FECHA</code>, <code>INMUEBLE</code>, <code>AFORO</code>, etc.) y guardará los datos históricos en Firebase Realtime Database.
+                Selecciona tu archivo de machote directamente en formato <b>Excel (.xlsx o .xls)</b> o CSV. El sistema identificará las columnas (<code>EVENTO</code>, <code>FECHA</code>, <code>INMUEBLE</code>, <code>AFORO</code>, etc.) y guardará los datos históricos en Firebase Realtime Database asociándolos a tu usuario de auditoría.
             </p>
 
             <label for="input-excel" class="block border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
@@ -295,7 +296,7 @@
         let eventosGlobal = [];
         let eventosFiltradosActuales = [];
 
-        // Estado del usuario en tiempo real (Auth)
+        // Estado del usuario en tiempo real
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user) {
@@ -333,7 +334,7 @@
             });
         };
 
-        // Leer datos en tiempo real desde Firebase
+        // Leer datos desde Firebase
         const eventosRef = ref(db, 'eventos');
         onValue(eventosRef, (snapshot) => {
             const data = snapshot.val();
@@ -347,7 +348,6 @@
             actualizarReportes();
         });
 
-        // Helper para convertir fechas de Excel
         function parseExcelDate(val) {
             if (!val) return { fechaStr: '2026-10-15', dateObj: new Date('2026-10-15') };
             if (val instanceof Date) return { fechaStr: val.toISOString().split('T')[0], dateObj: val };
@@ -363,7 +363,7 @@
             return { fechaStr: String(val), dateObj: new Date('2026-10-15') };
         }
 
-        // Carga Masiva desde Excel
+        // Carga Masiva desde Excel con Registro de Auditoría
         window.procesarExcel = function(e) {
             if (!currentUser) {
                 alert("Debes iniciar sesión para cargar archivos.");
@@ -393,6 +393,7 @@
 
                     const batchUpdates = {};
                     let cargados = 0;
+                    const ahora = new Date().toLocaleString();
 
                     rows.forEach((r) => {
                         const getVal = (colNames) => {
@@ -427,6 +428,8 @@
                             pagoSsc: getVal(['PAGO SSC']) || 'NO',
                             bomberos: getVal(['HORARIOS BOMBEROS', 'BOMBEROS']),
                             amenidades: `PYRO: ${getVal(['PYRO']) || 'NO'} | DRON: ${getVal(['DRON']) || 'NO'} | ACTIVACIONES: ${getVal(['ACTIVACIONES']) || 'NINGUNA'}`,
+                            creadoPor: `${currentUser.email} (${ahora})`,
+                            modificadoPor: `${currentUser.email} (${ahora})`,
                             timestamp: Date.now()
                         };
                         cargados++;
@@ -461,7 +464,7 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // Guardar o Editar evento
+        // Guardar o Editar evento con Auditoría
         window.guardarEvento = function(e) {
             e.preventDefault();
 
@@ -474,6 +477,7 @@
             const editId = document.getElementById('edit-id').value;
             const fechaVal = document.getElementById('inp-fecha').value;
             const fechaObj = new Date(fechaVal);
+            const fechaAudit = new Date().toLocaleString();
 
             const regData = {
                 evento: document.getElementById('inp-evento').value,
@@ -492,18 +496,26 @@
                 pagoSsc: document.getElementById('inp-pagossc').value,
                 bomberos: document.getElementById('inp-bomberos').value,
                 amenidades: document.getElementById('inp-amenidades').value,
+                modificadoPor: `${currentUser.email} (${fechaAudit})`,
                 timestamp: Date.now()
             };
 
             if (editId) {
-                // Actualizar registro existente
+                // Conservar CreadoPor existente
+                const existente = eventosGlobal.find(i => i.id === editId);
+                if (existente && existente.creadoPor) {
+                    regData.creadoPor = existente.creadoPor;
+                } else {
+                    regData.creadoPor = `${currentUser.email} (${fechaAudit})`;
+                }
+
                 set(ref(db, 'eventos/' + editId), regData).then(() => {
                     alert("¡Evento actualizado correctamente!");
                     cancelarEdicion();
                     switchTab('tabla');
                 }).catch(err => alert("Error al actualizar: " + err.message));
             } else {
-                // Crear nuevo registro
+                regData.creadoPor = `${currentUser.email} (${fechaAudit})`;
                 const nuevoRef = push(eventosRef);
                 set(nuevoRef, regData).then(() => {
                     alert("¡Registro guardado con éxito!");
@@ -539,7 +551,6 @@
             document.getElementById('inp-bomberos').value = ev.bomberos || '';
             document.getElementById('inp-amenidades').value = ev.amenidades || '';
 
-            // Cambiar UI del formulario a modo Edición
             document.getElementById('form-titulo').innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-600 mr-2"></i> Editar Evento`;
             document.getElementById('btn-submit-form').innerHTML = `<i class="fa-solid fa-rotate mr-2"></i> Actualizar Registro`;
             document.getElementById('btn-cancelar-edit').classList.remove('hidden');
@@ -547,7 +558,6 @@
             switchTab('nuevo');
         };
 
-        // Cancelar edición
         window.cancelarEdicion = function() {
             document.getElementById('edit-id').value = '';
             document.getElementById('form-evento').reset();
@@ -556,7 +566,6 @@
             document.getElementById('btn-cancelar-edit').classList.add('hidden');
         };
 
-        // Eliminar registro
         window.eliminarEvento = function(id) {
             if (!currentUser) {
                 alert("Debes iniciar sesión para eliminar registros.");
@@ -568,12 +577,12 @@
             }
         };
 
-        // Renderizar tabla con soporte de acciones seguras
+        // Renderizar tabla con auditoría visible
         function renderTabla(data) {
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-slate-400">No hay registros almacenados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="12" class="p-4 text-center text-slate-400">No hay registros almacenados.</td></tr>`;
                 return;
             }
             data.forEach(item => {
@@ -590,6 +599,9 @@
                     <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.pepc === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.pepc}</span></td>
                     <td class="p-3">${item.pagoSsc || '-'}</td>
                     <td class="p-3">${item.amenidades || '-'}</td>
+                    <td class="p-3 text-[10px] text-slate-500 leading-tight">
+                        <span class="block font-semibold text-slate-700">${item.modificadoPor || 'Sistema'}</span>
+                    </td>
                     <td class="p-3 text-center">
                         ${currentUser ? `
                             <button onclick="editarEvento('${item.id}')" class="text-amber-600 hover:text-amber-800 mr-2 cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -601,7 +613,7 @@
             });
         }
 
-        // Exportar Reportes a Excel
+        // Exportar a Excel con Auditoría
         window.exportarReporteExcel = function() {
             if (eventosFiltradosActuales.length === 0) {
                 alert("No hay registros en el periodo seleccionado para exportar.");
@@ -618,7 +630,9 @@
                 "CARTA SACM": i.sacm,
                 "REGISTRO PEPC": i.pepc,
                 "PAGO SSC": i.pagoSsc,
-                "AMENIDADES / NOTAS": i.amenidades
+                "AMENIDADES / NOTAS": i.amenidades,
+                "CREADO POR": i.creadoPor || 'N/A',
+                "ÚLTIMA MODIFICACIÓN": i.modificadoPor || 'N/A'
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataExport);
@@ -670,17 +684,18 @@
             `;
         };
 
-        // Buscador
+        // Buscador ampliado a usuarios
         window.filtrarTabla = function() {
             const query = document.getElementById('buscador').value.toLowerCase();
             const filtrados = eventosGlobal.filter(i => 
                 (i.evento && i.evento.toLowerCase().includes(query)) || 
-                (i.inmueble && i.inmueble.toLowerCase().includes(query))
+                (i.inmueble && i.inmueble.toLowerCase().includes(query)) ||
+                (i.modificadoPor && i.modificadoPor.toLowerCase().includes(query))
             );
             renderTabla(filtrados);
         };
 
-        // Navegación de pestañas con restricción de autenticación
+        // Navegación
         window.switchTab = function(tab) {
             if ((tab === 'nuevo' || tab === 'excel') && !currentUser) {
                 alert("Debes iniciar sesión para acceder a esta sección.");
