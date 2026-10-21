@@ -10,12 +10,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- SheetJS para XLSX -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF y AutoTable para Generación de Reportes PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
 
     <!-- Navbar -->
     <header class="bg-slate-900 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+        <div class="max-w-[95%] mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
             <div class="flex items-center space-x-3">
                 <img src="./ocesa_logo.jpeg" alt="Logo OCESA" class="h-10 w-auto object-contain bg-white p-1 rounded-md shadow-sm" onerror="this.style.display='none'">
                 <div class="border-l border-slate-700 pl-3">
@@ -54,7 +57,7 @@
     </header>
 
     <!-- Contenido Principal -->
-    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+    <main class="flex-grow max-w-[95%] w-full mx-auto p-4 md:p-6">
 
         <!-- 0. SECCIÓN LOGIN -->
         <section id="view-login" class="hidden max-w-md mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md my-10">
@@ -89,8 +92,11 @@
                         <option value="trimestral">Trimestral (Q actual)</option>
                         <option value="anual" selected>Anual (2026)</option>
                     </select>
+                    <button onclick="generarReportePDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition cursor-pointer flex items-center">
+                        <i class="fa-solid fa-file-pdf mr-2"></i> Descargar Reporte PDF Completo
+                    </button>
                     <button onclick="exportarReporteExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition cursor-pointer flex items-center">
-                        <i class="fa-solid fa-file-excel mr-2"></i> Exportar Reporte a Excel
+                        <i class="fa-solid fa-file-excel mr-2"></i> Exportar a Excel
                     </button>
                 </div>
             </div>
@@ -128,33 +134,38 @@
             <div class="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm gap-3">
                 <h2 class="text-lg font-bold text-slate-700"><i class="fa-solid fa-database text-amber-600 mr-2"></i> Base de Datos en Tiempo Real</h2>
                 <div class="flex items-center gap-2 w-full sm:w-auto">
-                    <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar evento, inmueble o usuario..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64">
+                    <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar evento, inmueble..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64">
                     <button onclick="exportarTablaExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow transition cursor-pointer flex items-center whitespace-nowrap">
                         <i class="fa-solid fa-download mr-1.5"></i> Exportar XLSX
                     </button>
                 </div>
             </div>
             <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-                <table id="tabla-eventos" class="w-full text-left border-collapse text-xs">
+                <table id="tabla-eventos" class="w-full text-left border-collapse text-[11px]">
                     <thead>
                         <tr class="bg-slate-800 text-white uppercase tracking-wider whitespace-nowrap">
-                            <th class="p-3">Evento</th>
-                            <th class="p-3">Fecha</th>
-                            <th class="p-3">Inmueble</th>
-                            <th class="p-3">Aforo</th>
-                            <th class="p-3">Horario</th>
-                            <th class="p-3">DRO</th>
-                            <th class="p-3">SACM</th>
-                            <th class="p-3">PEPC</th>
-                            <th class="p-3">Pago SSC</th>
-                            <th class="p-3">Pyro</th>
-                            <th class="p-3">Dron</th>
-                            <th class="p-3">Activaciones</th>
-                            <th class="p-3">Sampling</th>
-                            <th class="p-3">Food Truck</th>
-                            <th class="p-3">Inflables</th>
-                            <th class="p-3">Última Modificación</th>
-                            <th class="p-3 text-center">Acciones</th>
+                            <th class="p-2.5">Evento</th>
+                            <th class="p-2.5">Fecha</th>
+                            <th class="p-2.5">Inmueble</th>
+                            <th class="p-2.5">Aforo</th>
+                            <th class="p-2.5">Horario</th>
+                            <th class="p-2.5">DRO</th>
+                            <th class="p-2.5">SACM</th>
+                            <th class="p-2.5">Aviso</th>
+                            <th class="p-2.5">SSC</th>
+                            <th class="p-2.5">PEPC</th>
+                            <th class="p-2.5">Pago SSC</th>
+                            <th class="p-2.5 bg-slate-700 text-amber-300">Supervisión Bomb.</th>
+                            <th class="p-2.5 bg-slate-700 text-amber-300"># Unid. Bomb.</th>
+                            <th class="p-2.5 bg-slate-700 text-amber-300">Prevención Bomb.</th>
+                            <th class="p-2.5">Pyro</th>
+                            <th class="p-2.5">Dron</th>
+                            <th class="p-2.5">Activaciones</th>
+                            <th class="p-2.5">Sampling</th>
+                            <th class="p-2.5">Food Truck</th>
+                            <th class="p-2.5">Inflables</th>
+                            <th class="p-2.5">Modificado Por</th>
+                            <th class="p-2.5 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200" id="tabla-cuerpo">
@@ -165,7 +176,7 @@
         </section>
 
         <!-- 3. SECCIÓN CAPTURA / EDICIÓN -->
-        <section id="view-nuevo" class="hidden max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm">
+        <section id="view-nuevo" class="hidden max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm">
             <div class="flex justify-between items-center mb-6 border-b pb-3">
                 <h2 id="form-titulo" class="text-xl font-bold text-slate-800"><i class="fa-solid fa-file-pen text-amber-600 mr-2"></i> Captura de Evento - Protección Civil</h2>
                 <button type="button" onclick="cancelarEdicion()" id="btn-cancelar-edit" class="hidden text-xs text-rose-600 hover:underline font-bold">Cancelar Edición</button>
@@ -229,36 +240,49 @@
                     <select id="inp-pagossc" class="w-full border border-slate-300 rounded-lg p-2.5 bg-white"><option value="SI">SI</option><option value="NO">NO</option><option value="EN PROCESO">EN PROCESO</option></select>
                 </div>
 
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Horario Bomberos / Unidades</label>
-                    <input type="text" id="inp-bomberos" placeholder="16:00 hrs (# Unidades: 1)" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500">
+                <!-- Sección Bomberos Desglosada -->
+                <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-red-50/60 p-4 rounded-lg border border-red-200">
+                    <h3 class="col-span-1 sm:col-span-3 font-bold text-xs text-red-900 uppercase"><i class="fa-solid fa-fire-extinguisher mr-1"></i> Horarios e Inmueble Bomberos</h3>
+                    <div>
+                        <label class="block font-semibold text-xs text-slate-700 mb-1">SUPERVISIÓN</label>
+                        <input type="text" id="inp-supervision" placeholder="ej. 16:00 hrs" class="w-full border border-slate-300 rounded p-1.5 bg-white">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-xs text-slate-700 mb-1"># UNIDADES</label>
+                        <input type="text" id="inp-unidades" placeholder="ej. 1" class="w-full border border-slate-300 rounded p-1.5 bg-white">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-xs text-slate-700 mb-1">PREVENCIÓN</label>
+                        <input type="text" id="inp-prevencion" placeholder="ej. 11:00 hrs - 18:00 hrs" class="w-full border border-slate-300 rounded p-1.5 bg-white">
+                    </div>
                 </div>
 
-                <!-- Amenidades y Elementos Especiales Separados -->
-                <div class="md:col-span-2 bg-amber-50 p-4 rounded-lg border border-amber-200 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <!-- Amenidades y Activaciones Especiales -->
+                <div class="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3 bg-amber-50/50 p-4 rounded-lg border border-amber-200">
+                    <h3 class="col-span-2 sm:col-span-3 font-bold text-xs text-amber-900 uppercase">Amenidades y Activaciones de Riesgo</h3>
                     <div>
-                        <label class="block font-bold text-xs text-amber-900 mb-1">PYRO (Pirotecnia)</label>
-                        <input type="text" id="inp-pyro" placeholder="NO / Empresa / Tipo" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                        <label class="block font-semibold text-xs text-slate-700 mb-1">PYRO (Pirotecnia)</label>
+                        <input type="text" id="inp-pyro" placeholder="NO / Empresa" class="w-full border border-slate-300 rounded p-1.5 bg-white">
                     </div>
                     <div>
-                        <label class="block font-bold text-xs text-amber-900 mb-1">DRON</label>
-                        <input type="text" id="inp-dron" placeholder="SI / NO" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                        <label class="block font-semibold text-xs text-slate-700 mb-1">DRON</label>
+                        <input type="text" id="inp-dron" placeholder="NO / SI" class="w-full border border-slate-300 rounded p-1.5 bg-white">
                     </div>
                     <div>
-                        <label class="block font-bold text-xs text-amber-900 mb-1">ACTIVACIONES</label>
-                        <input type="text" id="inp-activaciones" placeholder="Marcas / Stands" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                        <label class="block font-semibold text-xs text-slate-700 mb-1">ACTIVACIONES</label>
+                        <input type="text" id="inp-activaciones" placeholder="ej. AT&T, LECHERA" class="w-full border border-slate-300 rounded p-1.5 bg-white">
                     </div>
                     <div>
-                        <label class="block font-bold text-xs text-amber-900 mb-1">SAMPLING</label>
-                        <input type="text" id="inp-sampling" placeholder="Marcas sampling" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                        <label class="block font-semibold text-xs text-slate-700 mb-1">SAMPLING</label>
+                        <input type="text" id="inp-sampling" placeholder="ej. PRUDENCE" class="w-full border border-slate-300 rounded p-1.5 bg-white">
                     </div>
                     <div>
-                        <label class="block font-bold text-xs text-amber-900 mb-1">FOOD TRUCK</label>
-                        <input type="text" id="inp-foodtruck" placeholder="SI / NO / Marcas" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                        <label class="block font-semibold text-xs text-slate-700 mb-1">FOOD TRUCK</label>
+                        <input type="text" id="inp-foodtruck" placeholder="ej. CINEMEX" class="w-full border border-slate-300 rounded p-1.5 bg-white">
                     </div>
                     <div>
-                        <label class="block font-bold text-xs text-amber-900 mb-1">INFLABLES</label>
-                        <input type="text" id="inp-inflables" placeholder="SI / NO" class="w-full border border-slate-300 rounded p-2 bg-white text-xs">
+                        <label class="block font-semibold text-xs text-slate-700 mb-1">INFLABLES</label>
+                        <input type="text" id="inp-inflables" placeholder="NO / SI" class="w-full border border-slate-300 rounded p-1.5 bg-white">
                     </div>
                 </div>
 
@@ -276,7 +300,7 @@
                 <i class="fa-solid fa-file-excel text-emerald-600 mr-2"></i> Carga Masiva desde Excel (.xlsx / .xls / .csv)
             </h2>
             <p class="text-xs text-slate-600 mb-6 leading-relaxed">
-                Selecciona tu archivo de machote directamente en formato <b>Excel (.xlsx o .xls)</b> o CSV. El sistema identificará las columnas (<code>EVENTO</code>, <code>FECHA</code>, <code>INMUEBLE</code>, <code>AFORO</code>, <code>PYRO</code>, <code>DRON</code>, <code>ACTIVACIONES</code>, <code>SAMPLING</code>, <code>FOOD TRUCK</code>, <code>INFLABLES</code>, etc.) y guardará los datos históricos en Firebase.
+                Selecciona tu archivo de machote directamente en formato <b>Excel (.xlsx o .xls)</b>. El sistema identificará todas las columnas incluyendo <code>SUPERVISION</code>, <code># UNIDAD</code> y <code>PREVENCION</code>.
             </p>
 
             <label for="input-excel" class="block border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
@@ -299,7 +323,7 @@
 
     </main>
 
-    <!-- Script de Firebase, Auth y Lógica -->
+    <!-- Script de Firebase, Auth, PDF y Lógica -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, set, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -324,7 +348,7 @@
         let eventosGlobal = [];
         let eventosFiltradosActuales = [];
 
-        // Estado del usuario en tiempo real
+        // Estado de sesión
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user) {
@@ -340,7 +364,6 @@
             renderTabla(eventosGlobal);
         });
 
-        // Iniciar Sesión
         window.iniciarSesion = function(e) {
             e.preventDefault();
             const email = document.getElementById('login-email').value;
@@ -349,17 +372,11 @@
             signInWithEmailAndPassword(auth, email, pass).then(() => {
                 alert("¡Sesión iniciada correctamente!");
                 switchTab('tabla');
-            }).catch(err => {
-                alert("Error de autenticación: " + err.message);
-            });
+            }).catch(err => alert("Error de autenticación: " + err.message));
         };
 
-        // Cerrar Sesión
         window.cerrarSesion = function() {
-            signOut(auth).then(() => {
-                alert("Sesión cerrada");
-                switchTab('dashboard');
-            });
+            signOut(auth).then(() => switchTab('dashboard'));
         };
 
         // Leer datos desde Firebase
@@ -391,7 +408,7 @@
             return { fechaStr: String(val), dateObj: new Date('2026-10-15') };
         }
 
-        // Carga Masiva desde Excel mapeando las columnas exactas
+        // Carga Masiva desde Excel
         window.procesarExcel = function(e) {
             if (!currentUser) {
                 alert("Debes iniciar sesión para cargar archivos.");
@@ -454,13 +471,15 @@
                             ssc: getVal(['SSC RESOLUCIÓN', 'SSC']) || 'NO',
                             pepc: getVal(['REGISTRO PEPC', 'PEPC']) || 'NO',
                             pagoSsc: getVal(['PAGO SSC']) || 'NO',
-                            bomberos: getVal(['HORARIOS BOMBEROS', 'BOMBEROS']),
-                            pyro: getVal(['PYRO', 'PYRO ']) || 'NO',
-                            dron: getVal(['DRON', 'DRON ']) || 'NO',
+                            bomberosSupervision: getVal(['SUPERVISION', 'HORARIOS BOMBEROS']),
+                            bomberosUnidades: getVal(['# UNIDAD', '# UNIDADES', 'UNIDAD']),
+                            bomberosPrevencion: getVal(['PREVENCION', 'PREVENCIÓN']),
+                            pyro: getVal(['PYRO']) || 'NO',
+                            dron: getVal(['DRON']) || 'NO',
                             activaciones: getVal(['ACTIVACIONES', 'ACTIVACIONES ']) || '-',
-                            sampling: getVal(['SAMPLING', 'SAMPLING ']) || '-',
-                            foodtruck: getVal(['FOOD TRUCK', 'FOOD TRUCK ']) || '-',
-                            inflables: getVal(['INFLABES ', 'INFLABLES', 'INFLABLES ']) || 'NO',
+                            sampling: getVal(['SAMPLING']) || '-',
+                            foodTruck: getVal(['FOOD TRUCK']) || '-',
+                            inflables: getVal(['INFLABES ', 'INFLABLES']) || 'NO',
                             creadoPor: `${currentUser.email} (${ahora})`,
                             modificadoPor: `${currentUser.email} (${ahora})`,
                             timestamp: Date.now()
@@ -497,12 +516,12 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // Guardar o Editar evento desglosando amenidades
+        // Guardar o Editar Evento
         window.guardarEvento = function(e) {
             e.preventDefault();
 
             if (!currentUser) {
-                alert("Debes estar autenticado para registrar o guardar eventos.");
+                alert("Debes estar autenticado para guardar eventos.");
                 switchTab('login');
                 return;
             }
@@ -527,12 +546,14 @@
                 pepc: document.getElementById('inp-pepc').value,
                 dro: document.getElementById('inp-dro').value,
                 pagoSsc: document.getElementById('inp-pagossc').value,
-                bomberos: document.getElementById('inp-bomberos').value,
+                bomberosSupervision: document.getElementById('inp-supervision').value || '-',
+                bomberosUnidades: document.getElementById('inp-unidades').value || '0',
+                bomberosPrevencion: document.getElementById('inp-prevencion').value || '-',
                 pyro: document.getElementById('inp-pyro').value || 'NO',
                 dron: document.getElementById('inp-dron').value || 'NO',
                 activaciones: document.getElementById('inp-activaciones').value || '-',
                 sampling: document.getElementById('inp-sampling').value || '-',
-                foodtruck: document.getElementById('inp-foodtruck').value || '-',
+                foodTruck: document.getElementById('inp-foodtruck').value || '-',
                 inflables: document.getElementById('inp-inflables').value || 'NO',
                 modificadoPor: `${currentUser.email} (${fechaAudit})`,
                 timestamp: Date.now()
@@ -558,7 +579,7 @@
             }
         };
 
-        // Cargar datos en el formulario para Editar
+        // Editar
         window.editarEvento = function(id) {
             if (!currentUser) {
                 alert("Debes iniciar sesión para editar eventos.");
@@ -581,13 +602,15 @@
             document.getElementById('inp-pepc').value = ev.pepc || 'SI';
             document.getElementById('inp-dro').value = ev.dro || '';
             document.getElementById('inp-pagossc').value = ev.pagoSsc || 'SI';
-            document.getElementById('inp-bomberos').value = ev.bomberos || '';
-            document.getElementById('inp-pyro').value = ev.pyro || '';
-            document.getElementById('inp-dron').value = ev.dron || '';
+            document.getElementById('inp-supervision').value = ev.bomberosSupervision || '';
+            document.getElementById('inp-unidades').value = ev.bomberosUnidades || '';
+            document.getElementById('inp-prevencion').value = ev.bomberosPrevencion || '';
+            document.getElementById('inp-pyro').value = ev.pyro || 'NO';
+            document.getElementById('inp-dron').value = ev.dron || 'NO';
             document.getElementById('inp-activaciones').value = ev.activaciones || '';
             document.getElementById('inp-sampling').value = ev.sampling || '';
-            document.getElementById('inp-foodtruck').value = ev.foodtruck || '';
-            document.getElementById('inp-inflables').value = ev.inflables || '';
+            document.getElementById('inp-foodtruck').value = ev.foodTruck || '';
+            document.getElementById('inp-inflables').value = ev.inflables || 'NO';
 
             document.getElementById('form-titulo').innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-600 mr-2"></i> Editar Evento`;
             document.getElementById('btn-submit-form').innerHTML = `<i class="fa-solid fa-rotate mr-2"></i> Actualizar Registro`;
@@ -615,39 +638,44 @@
             }
         };
 
-        // Renderizar tabla con todas las columnas individuales
+        // Renderizar Tabla
         function renderTabla(data) {
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="17" class="p-4 text-center text-slate-400">No hay registros almacenados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="22" class="p-4 text-center text-slate-400">No hay registros almacenados.</td></tr>`;
                 return;
             }
             data.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition";
                 tr.innerHTML = `
-                    <td class="p-3 font-semibold text-slate-700 whitespace-nowrap">${item.evento}</td>
-                    <td class="p-3 whitespace-nowrap">${item.fecha}</td>
-                    <td class="p-3 whitespace-nowrap">${item.inmueble}</td>
-                    <td class="p-3 whitespace-nowrap">${item.aforo}</td>
-                    <td class="p-3 whitespace-nowrap">${item.horario}</td>
-                    <td class="p-3 whitespace-nowrap">${item.dro || '-'}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.sacm === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.sacm}</span></td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.pepc === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.pepc}</span></td>
-                    <td class="p-3">${item.pagoSsc || '-'}</td>
-                    <td class="p-3 font-semibold ${item.pyro && item.pyro !== 'NO' ? 'text-purple-700' : 'text-slate-400'}">${item.pyro || 'NO'}</td>
-                    <td class="p-3">${item.dron || 'NO'}</td>
-                    <td class="p-3 text-[11px]">${item.activaciones || '-'}</td>
-                    <td class="p-3 text-[11px]">${item.sampling || '-'}</td>
-                    <td class="p-3 text-[11px]">${item.foodtruck || '-'}</td>
-                    <td class="p-3">${item.inflables || 'NO'}</td>
-                    <td class="p-3 text-[10px] text-slate-500 leading-tight whitespace-nowrap">
+                    <td class="p-2.5 font-semibold text-slate-700 whitespace-nowrap">${item.evento}</td>
+                    <td class="p-2.5 whitespace-nowrap">${item.fecha}</td>
+                    <td class="p-2.5 whitespace-nowrap">${item.inmueble}</td>
+                    <td class="p-2.5 whitespace-nowrap">${item.aforo}</td>
+                    <td class="p-2.5 whitespace-nowrap">${item.horario}</td>
+                    <td class="p-2.5 whitespace-nowrap">${item.dro || '-'}</td>
+                    <td class="p-2.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${item.sacm === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.sacm}</span></td>
+                    <td class="p-2.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${item.aviso === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.aviso}</span></td>
+                    <td class="p-2.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${item.ssc === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.ssc}</span></td>
+                    <td class="p-2.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${item.pepc === 'SI' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${item.pepc}</span></td>
+                    <td class="p-2.5 whitespace-nowrap">${item.pagoSsc || '-'}</td>
+                    <td class="p-2.5 whitespace-nowrap text-[10px] bg-slate-50 font-medium">${item.bomberosSupervision || '-'}</td>
+                    <td class="p-2.5 whitespace-nowrap text-[10px] bg-slate-50 font-bold text-center">${item.bomberosUnidades || '0'}</td>
+                    <td class="p-2.5 whitespace-nowrap text-[10px] bg-slate-50 font-medium">${item.bomberosPrevencion || '-'}</td>
+                    <td class="p-2.5 whitespace-nowrap font-semibold">${item.pyro || 'NO'}</td>
+                    <td class="p-2.5 whitespace-nowrap font-semibold">${item.dron || 'NO'}</td>
+                    <td class="p-2.5 whitespace-nowrap text-[10px]">${item.activaciones || '-'}</td>
+                    <td class="p-2.5 whitespace-nowrap text-[10px]">${item.sampling || '-'}</td>
+                    <td class="p-2.5 whitespace-nowrap text-[10px]">${item.foodTruck || '-'}</td>
+                    <td class="p-2.5 whitespace-nowrap font-semibold">${item.inflables || 'NO'}</td>
+                    <td class="p-2.5 text-[9px] text-slate-500 leading-tight whitespace-nowrap">
                         <span class="block font-semibold text-slate-700">${item.modificadoPor || 'Sistema'}</span>
                     </td>
-                    <td class="p-3 text-center whitespace-nowrap">
+                    <td class="p-2.5 text-center whitespace-nowrap">
                         ${currentUser ? `
-                            <button onclick="editarEvento('${item.id}')" class="text-amber-600 hover:text-amber-800 mr-2 cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="editarEvento('${item.id}')" class="text-amber-600 hover:text-amber-800 mr-1.5 cursor-pointer" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
                             <button onclick="eliminarEvento('${item.id}')" class="text-rose-500 hover:text-rose-700 cursor-pointer" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
                         ` : `<span class="text-slate-300" title="Inicia sesión para editar"><i class="fa-solid fa-lock"></i></span>`}
                     </td>
@@ -656,7 +684,85 @@
             });
         }
 
-        // Exportar a Excel con las columnas exactas del machote
+        // GENERAR REPORTE PDF COMPLETO Y ESTADÍSTICO
+        window.generarReportePDF = function() {
+            if (eventosFiltradosActuales.length === 0) {
+                alert("No hay eventos en el periodo seleccionado para generar el PDF.");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'mm', 'a4');
+            const filtro = document.getElementById('filtro-periodo').value.toUpperCase();
+            const fechaEmision = new Date().toLocaleString();
+
+            // Encabezado
+            doc.setFillColor(15, 23, 42); // slate-900
+            doc.rect(0, 0, 297, 24, 'F');
+            
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.setTextColor(255, 255, 255);
+            doc.text("PROTECCIÓN CIVIL OCESA - REPORTE OPERATIVO Y ESTADÍSTICO", 14, 12);
+
+            doc.setFontSize(9);
+            doc.setTextColor(251, 191, 36); // amber-400
+            doc.text(`PERIODO EVALUADO: ${filtro} | EMISIÓN: ${fechaEmision}`, 14, 18);
+
+            // Sección de Métricas (KPIs)
+            let totalAsistentes = eventosFiltradosActuales.reduce((acc, curr) => acc + (parseInt((curr.aforo || '').toString().replace(/[^0-9]/g, '')) || 0), 0);
+            let pepcSis = eventosFiltradosActuales.filter(i => i.pepc === 'SI').length;
+            let porcentajePepc = Math.round((pepcSis / eventosFiltradosActuales.length) * 100);
+            let pyroCount = eventosFiltradosActuales.filter(i => i.pyro && i.pyro.toUpperCase() !== 'NO').length;
+
+            doc.setFillColor(248, 250, 252);
+            doc.rect(14, 28, 269, 22, 'F');
+            doc.setDrawColor(226, 232, 240);
+            doc.rect(14, 28, 269, 22, 'S');
+
+            doc.setFontSize(10);
+            doc.setTextColor(30, 41, 59);
+            doc.text(`Total de Eventos: ${eventosFiltradosActuales.length}`, 20, 37);
+            doc.text(`Aforo Total Atendido: ${totalAsistentes.toLocaleString()} personas`, 85, 37);
+            doc.text(`Cumplimiento PEPC: ${porcentajePepc}%`, 170, 37);
+            doc.text(`Eventos con Pirotecnia: ${pyroCount}`, 230, 37);
+
+            // Resumen Ejecutivo
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text(`* Este informe certifica el cumplimiento de los Programas Especiales de Protección Civil y dictámenes de bomberos para los escenarios operados.`, 14, 55);
+
+            // Tabla de Eventos
+            const tableData = eventosFiltradosActuales.map(i => [
+                i.evento,
+                i.fecha,
+                i.inmueble,
+                i.aforo,
+                i.horario,
+                i.sacm,
+                i.pepc,
+                i.pagoSsc,
+                `${i.bomberosSupervision || '-'}\nUnid: ${i.bomberosUnidades || '0'}`,
+                i.pyro || 'NO',
+                i.dron || 'NO',
+                i.activaciones || '-'
+            ]);
+
+            doc.autoTable({
+                startY: 58,
+                head: [['Evento', 'Fecha', 'Inmueble', 'Aforo', 'Horario', 'SACM', 'PEPC', 'Pago SSC', 'Bomberos', 'Pyro', 'Dron', 'Activaciones']],
+                body: tableData,
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2 },
+                headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [241, 245, 249] },
+                margin: { left: 14, right: 14 }
+            });
+
+            doc.save(`Reporte_Proteccion_Civil_${filtro}_2026.pdf`);
+        };
+
+        // Exportar a Excel
         window.exportarReporteExcel = function() {
             if (eventosFiltradosActuales.length === 0) {
                 alert("No hay registros en el periodo seleccionado para exportar.");
@@ -675,13 +781,15 @@
                 "SSC RESOLUCIÓN": i.ssc,
                 "REGISTRO PEPC": i.pepc,
                 "PAGO SSC": i.pagoSsc,
-                "HORARIOS BOMBEROS": i.bomberos,
-                "PYRO": i.pyro,
-                "DRON": i.dron,
-                "ACTIVACIONES": i.activaciones,
-                "SAMPLING": i.sampling,
-                "FOOD TRUCK": i.foodtruck,
-                "INFLABLES": i.inflables,
+                "SUPERVISION BOMBEROS": i.bomberosSupervision || 'N/A',
+                "# UNIDAD BOMBEROS": i.bomberosUnidades || '0',
+                "PREVENCION BOMBEROS": i.bomberosPrevencion || 'N/A',
+                "PYRO": i.pyro || 'NO',
+                "DRON": i.dron || 'NO',
+                "ACTIVACIONES": i.activaciones || 'N/A',
+                "SAMPLING": i.sampling || 'N/A',
+                "FOOD TRUCK": i.foodTruck || 'N/A',
+                "INFLABLES": i.inflables || 'NO',
                 "CREADO POR": i.creadoPor || 'N/A',
                 "ÚLTIMA MODIFICACIÓN": i.modificadoPor || 'N/A'
             }));
@@ -691,7 +799,7 @@
             XLSX.utils.book_append_sheet(wb, ws, "Base de Datos PC");
 
             const filtro = document.getElementById('filtro-periodo').value;
-            XLSX.writeFile(wb, `Reporte_Proteccion_Civil_${filtro}_2026.xlsx`);
+            XLSX.writeFile(wb, `Base_Datos_Proteccion_Civil_${filtro}_2026.xlsx`);
         };
 
         window.exportarTablaExcel = function() {
@@ -725,7 +833,7 @@
             let porcentajePepc = eventosFiltradosActuales.length > 0 ? Math.round((pepcSis / eventosFiltradosActuales.length) * 100) : 0;
             document.getElementById('kpi-pepc').innerText = porcentajePepc + "%";
 
-            let pyroCount = eventosFiltradosActuales.filter(i => i.pyro && i.pyro !== 'NO' && i.pyro !== '').length;
+            let pyroCount = eventosFiltradosActuales.filter(i => i.pyro && i.pyro.toUpperCase() !== 'NO').length;
             document.getElementById('kpi-pyro').innerText = pyroCount;
 
             document.getElementById('resumen-ejecutivo').innerHTML = `
@@ -735,13 +843,12 @@
             `;
         };
 
-        // Buscador ampliado
+        // Buscador
         window.filtrarTabla = function() {
             const query = document.getElementById('buscador').value.toLowerCase();
             const filtrados = eventosGlobal.filter(i => 
                 (i.evento && i.evento.toLowerCase().includes(query)) || 
                 (i.inmueble && i.inmueble.toLowerCase().includes(query)) ||
-                (i.activaciones && i.activaciones.toLowerCase().includes(query)) ||
                 (i.modificadoPor && i.modificadoPor.toLowerCase().includes(query))
             );
             renderTabla(filtrados);
