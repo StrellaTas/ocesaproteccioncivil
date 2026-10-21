@@ -64,7 +64,6 @@
 
         <!-- 0. PANTALLA DE BIENVENIDA (HOME / LANDING PAGE) -->
         <section id="view-home" class="space-y-10 py-6">
-            <!-- Hero Banner -->
             <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white rounded-2xl p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
                 <div class="max-w-2xl space-y-4 z-10">
                     <div class="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 text-xs font-bold px-3 py-1 rounded-full border border-amber-500/30">
@@ -74,7 +73,7 @@
                         Plataforma de Monitoreo y Reportes de <span class="text-amber-400">Protección Civil</span>
                     </h2>
                     <p class="text-slate-300 text-sm md:text-base leading-relaxed">
-                        Bienvenido al portal centralizado para la gestión, dictaminación y supervisión en tiempo real de eventos masivos, permisos institucionales (SACM, PEPC, SSC), cobertura de Bomberos y trazabilidad operativa.
+                        Portal centralizado para la gestión, dictaminación y supervisión en tiempo real de eventos masivos, permisos institucionales (SACM, PEPC, SSC), cobertura de Bomberos y trazabilidad operativa.
                     </p>
                     <div class="flex flex-wrap items-center gap-3 pt-2">
                         <button onclick="switchTab('login')" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-3 rounded-xl text-sm shadow-lg transition cursor-pointer flex items-center">
@@ -86,7 +85,6 @@
                     </div>
                 </div>
 
-                <!-- Tarjeta / Ilustración Hero -->
                 <div class="z-10 w-full md:w-80 bg-slate-900/80 backdrop-blur border border-slate-700 p-6 rounded-xl shadow-2xl text-center space-y-4">
                     <div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-amber-500/20">
                         <i class="fa-solid fa-user-shield"></i>
@@ -101,7 +99,7 @@
                 </div>
             </div>
 
-            <!-- Características Principales -->
+            <!-- Características -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200/80 space-y-2 hover:shadow-md transition">
                     <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center text-lg font-bold">
@@ -110,7 +108,6 @@
                     <h4 class="font-bold text-slate-800 text-sm">Tiempo Real</h4>
                     <p class="text-xs text-slate-500 leading-relaxed">Sincronización instantánea de registros y dictámenes desde cualquier dispositivo en campo.</p>
                 </div>
-
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200/80 space-y-2 hover:shadow-md transition">
                     <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-lg font-bold">
                         <i class="fa-solid fa-file-excel"></i>
@@ -118,7 +115,6 @@
                     <h4 class="font-bold text-slate-800 text-sm">Carga Masiva Excel</h4>
                     <p class="text-xs text-slate-500 leading-relaxed">Importación en segundos de machotes de eventos históricos en formatos .xlsx y .csv.</p>
                 </div>
-
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200/80 space-y-2 hover:shadow-md transition">
                     <div class="w-10 h-10 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center text-lg font-bold">
                         <i class="fa-solid fa-file-pdf"></i>
@@ -126,7 +122,6 @@
                     <h4 class="font-bold text-slate-800 text-sm">Reportes en PDF</h4>
                     <p class="text-xs text-slate-500 leading-relaxed">Generación de informes ejecutivos foliados y estadísticos para auditorías e inspecciones.</p>
                 </div>
-
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200/80 space-y-2 hover:shadow-md transition">
                     <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center text-lg font-bold">
                         <i class="fa-solid fa-clock-rotate-left"></i>
@@ -427,6 +422,32 @@
         let currentUser = null;
         let eventosGlobal = [];
         let eventosFiltradosActuales = [];
+
+        // Configuración de Inactividad (60 minutos)
+        function iniciarControlInactividad() {
+            let tiempoInactividad;
+
+            function reiniciarTemporizador() {
+                clearTimeout(tiempoInactividad);
+                // 60 minutos = 60 * 60 * 1000 ms = 3,600,000 ms
+                tiempoInactividad = setTimeout(() => {
+                    if (currentUser) {
+                        signOut(auth).then(() => {
+                            alert("Su sesión ha expirado por inactividad (60 minutos).");
+                            switchTab('home');
+                        }).catch(err => console.error("Error al cerrar sesión por inactividad:", err));
+                    }
+                }, 3600000);
+            }
+
+            window.onload = reiniciarTemporizador;
+            document.onmousemove = reiniciarTemporizador;
+            document.onkeypress = reiniciarTemporizador;
+            document.onclick = reiniciarTemporizador;
+            document.onscroll = reiniciarTemporizador;
+        }
+
+        iniciarControlInactividad();
 
         // Estado de sesión
         onAuthStateChanged(auth, (user) => {
@@ -930,7 +951,7 @@
             renderTabla(filtrados);
         };
 
-        // Navegación de Pestañas (incluyendo Home)
+        // Navegación de Pestañas
         window.switchTab = function(tab) {
             if ((tab === 'nuevo' || tab === 'excel') && !currentUser) {
                 alert("Debes iniciar sesión para acceder a esta sección.");
